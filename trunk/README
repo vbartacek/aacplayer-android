@@ -1,0 +1,90 @@
+
+Freeware Advanced Audio (AAC) Player for Android
+http://www.spoledge.com
+
+The source code can be obtained at http://code.google.com/p/aacplayer-android/
+
+This is a port of FAAD2 (Freeware Advanced Audio (AAC) Decoder
+including SBR decoding) to Android platform.
+
+This program uses FAAD2 library to decode AAC streams.
+For more information about FAAD2, please visit http://www.audiocoding.com/
+
+
+COPYRIGHTS
+==========
+
+For this software the following license applies:
+
+******************************************************************************
+** Freeware Advanced Audio (AAC) Player for Android
+** Copyright (C) 2010 Spolecne s.r.o., http://www.spoledge.com
+**
+** This program is free software; you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation; either version 2 of the License, or
+** (at your option) any later version.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License
+** along with this program; if not, write to the Free Software
+** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+******************************************************************************
+
+
+!!! PLEASE NOTE !!!
+
+that the use of this software may require the payment of
+patent royalties. You need to consider this issue before you start
+building derivative works. We are not warranting or indemnifying you in
+any way for patent royalities! YOU ARE SOLELY RESPONSIBLE FOR YOUR OWN
+ACTIONS!
+
+For more information about the AAC patents, please visit
+http://www.vialicensing.com/licensing/AAC_index.cfm
+
+
+INSTALLING
+==========
+
+Requirements:
+    - Android SDK - at least platform 3 (Android 1.5)
+    - Android NDK - r4
+
+
+Compiling:
+    1) copy sample.local.properties to local.properties and edit it
+        (path to Android SDK)
+
+    2) copy sample.ant.properties to .ant.properties and edit it
+        (path to Android NDK)
+
+    3) run ant
+
+    4) install the APK on the emulator or a device:
+        adb install bin/AACPlayer-debug.apk
+
+Note:
+    The compile script was tested on linux platform and there is 
+    a possibility that it won't work on windows / macosx.
+
+
+RUNNING
+=======
+
+There are two options of playing AAC files:
+    1) playing using the FAAD2 decoder native library
+            + should work on all 1.5+ platforms
+            - slow on emulator
+            - patent license is needed
+
+    2) playing using an internal AAC decoder (HTC Desire) by splitting the
+        stream into small file chunks (having the ".aac" suffix)
+            - only some devices support this
+            - does not work on emulator
+            - the playing is not smooth
+
