@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">AAC Player</string>
+	<string name="button_native">Player I (FAAD2)</string>
+	<string name="button_file">Player II (file chunks)</string>
+	<string name="button_stop">STOP</string>
+</resources>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:padding="2mm"
+	android:background="@drawable/main_background"
+>
+
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_centerInParent="true"
+	>
+
+		<LinearLayout
+			android:layout_width="fill_parent"
+			android:layout_height="fill_parent"
+			android:orientation="vertical"
+			android:paddingLeft="5mm" 
+			android:paddingRight="5mm" 
+		>
+
+			<AutoCompleteTextView
+				android:id="@+id/view_main_edit_url"
+				android:text="http://"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+			/>
+
+			<Button
+				android:id="@+id/view_main_button_native"
+				android:text="@string/button_native"
+				style="@style/button_main"
+			/>
+
+			<Button
+				android:id="@+id/view_main_button_file"
+				android:text="@string/button_file"
+				style="@style/button_main"
+			/>
+
+			<Button
+				android:id="@+id/view_main_button_stop"
+				android:text="@string/button_stop"
+				style="@style/button_main"
+			/>
+
+		</LinearLayout>
+
+	</RelativeLayout>
+
+</RelativeLayout>
