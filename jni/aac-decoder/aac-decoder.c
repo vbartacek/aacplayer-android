@@ -43,7 +43,8 @@ typedef struct _aacdw {
 static void* aacdw_start(unsigned char *buffer, unsigned long buffer_size);
 static void aacdw_stop(aacdw *info);
 static void* aacdw_prepare_buffer( aacdw *info, jbyte *jbuffer, jint inOff, jint inLen );
-static void* aacdw_try_decode( aacdw *info, NeAACDecFrameInfo *pframe, unsigned char **buffer );
+static void aacdw_try_decode( aacdw *info, NeAACDecFrameInfo *pframe, unsigned char **buffer,
+                        jshort *jsamples, unsigned long samples_size );
 static int aacdw_probe(unsigned char *buffer, int len);
 
 static jclass AACInfo_jclass;
@@ -137,10 +138,11 @@ jint Java_com_spoledge_aacplayer_AACDecoder_nativeDecode
 
     NeAACDecFrameInfo frame;
     int totalSamples = 0;
+    jshort *samples = jsamples;
 
     do
     {
-        unsigned short* samples = (unsigned short*) aacdw_try_decode( info, &frame, &buffer );
+        aacdw_try_decode( info, &frame, &buffer, samples, outLen );
 
         if (frame.error != 0) {
             (*env)->ReleaseShortArrayElements( env, outBuf, jsamples, JNI_ABORT );
@@ -155,13 +157,14 @@ jint Java_com_spoledge_aacplayer_AACDecoder_nativeDecode
         buffer += frame.bytesconsumed;
 
         if (frame.samples < 1) __android_log_print(ANDROID_LOG_WARN, AACDW, "NeAACDecDecode no samples produced" );
-        else memcpy( jsamples + totalSamples, samples, sizeof(jshort) * frame.samples );
 
+        samples += frame.samples;
+        outLen -= frame.samples;
         totalSamples += frame.samples;
     } 
     while (info->bytesleft > 0
               && info->bytesleft > 2*frame.bytesconsumed
-              && totalSamples + 2*frame.samples < outLen );
+              && 2*frame.samples < outLen );
 
 
     if (info->buffer == NULL && info->bytesleft > 0)
@@ -336,13 +339,14 @@ void* aacdw_prepare_buffer( aacdw *info, jbyte *jbuffer, jint inOff, jint inLen 
 }
 
 
-void* aacdw_try_decode( aacdw *info, NeAACDecFrameInfo *pframe, unsigned char **buffer ) {
+void aacdw_try_decode( aacdw *info, NeAACDecFrameInfo *pframe, unsigned char **buffer,
+                        jshort *jsamples, unsigned long samples_size  ) {
     int attempts = 10;
 
     do {
-        unsigned char *samples = (unsigned char*) NeAACDecDecode( info->hAac, pframe, *buffer, info->bytesleft );
+        NeAACDecDecode2( info->hAac, pframe, *buffer, info->bytesleft, (void**)&jsamples, samples_size );
 
-        if (pframe->error == 0) return samples;
+        if (pframe->error == 0) return;
 
         __android_log_print(ANDROID_LOG_ERROR, AACDW, "NeAACDecDecode bytesleft=%d, error: %s",
                     info->bytesleft,
