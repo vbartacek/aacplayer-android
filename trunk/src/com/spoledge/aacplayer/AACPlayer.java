@@ -117,6 +117,10 @@ public class AACPlayer {
         AACDecoder aacd = AACDecoder.create();
         PCMFeeder pcmfeed = null;
 
+        // profiling info
+        long profMs = 0;
+        int profCount = 0;
+
         try {
             AACDecoder.AACInfo info = aacd.start( buf, 0, total );
 
@@ -154,7 +158,12 @@ public class AACPlayer {
             atrack.play();
 
             do {
+                long tsStart = System.currentTimeMillis();
+
                 int nsamp = aacd.decode( buf, 0, total, samples, samples.length );
+
+                profMs += System.currentTimeMillis() - tsStart;
+                profCount++;
 
                 Log.d( LOG, "play(): decoded " + nsamp + " samples" );
 
@@ -179,6 +188,8 @@ public class AACPlayer {
 
             if (pcmfeed != null) pcmfeed.stop();
             aacd.stop();
+
+            Log.i( LOG, "play(): average decoding time: " + profMs / profCount + " ms");
         }
     }
 
