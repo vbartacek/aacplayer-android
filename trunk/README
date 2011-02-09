@@ -5,10 +5,14 @@ http://www.spoledge.com
 The source code can be obtained at http://code.google.com/p/aacplayer-android/
 
 This is a port of FAAD2 (Freeware Advanced Audio (AAC) Decoder
-including SBR decoding) to Android platform.
+including SBR decoding) and FFmpeg library to Android platform.
 
 This program uses FAAD2 library to decode AAC streams.
 For more information about FAAD2, please visit http://www.audiocoding.com/
+
+This software uses libraries from the FFmpeg project under the LGPLv2.1
+For more information about FFmpeg, please visit http://ffmpeg.org/
+
 
 
 COPYRIGHTS
@@ -54,6 +58,27 @@ INSTALLING
 Requirements:
     - Android SDK - at least platform 3 (Android 1.5)
     - Android NDK - r4
+
+Preparing FFmpeg sources:
+    0) download FFmpeg 0.6.1
+
+    1) copy directories libavcodec, libavformat and libavutil to jni/ffmpeg:
+        cp -R ../ffmpeg-0.6.1/libavcodec jni/ffmpeg
+        cp -R ../ffmpeg-0.6.1/libavformat jni/ffmpeg
+        cp -R ../ffmpeg-0.6.1/libavutil jni/ffmpeg
+
+    2) Apply patch:
+        patch -p0  < ffmpeg-0.6.1.patch
+
+
+NOTE: If you want to compile only FAAD2 library, then just use
+    Android-FAAD2-only.mk file:
+        cp jni/aac-decoder/Android-FAAD2-only.mk jni/aac-decoder/Android.mk
+
+    In that case you do not need to download and patch FFmpeg sources at all.
+    
+    By doing this you will be able to compile the project, but you will not be
+    able to use the FFmpeg decoder !
 
 
 Compiling:

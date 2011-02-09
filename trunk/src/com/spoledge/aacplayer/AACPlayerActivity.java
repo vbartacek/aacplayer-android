@@ -21,6 +21,7 @@ package com.spoledge.aacplayer;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 
@@ -33,13 +34,47 @@ import android.widget.EditText;
 /**
  * This is the main activity.
  */
-public class AACPlayerActivity extends Activity implements View.OnClickListener {
+public class AACPlayerActivity extends Activity implements View.OnClickListener, PlayerCallback {
 
     private History history;
     private AutoCompleteTextView urlView;
+    private Button btnFaad2;
+    private Button btnFFmpeg;
+    private Button btnStop;
+    private Handler uiHandler;
 
-    private AACPlayer aacPlayer;
+    private DirectAACPlayer aacPlayer;
     private AACFileChunkPlayer aacFileChunkPlayer;
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // PlayerCallback
+    ////////////////////////////////////////////////////////////////////////////
+
+    public void playerStarted() {
+        uiHandler.post( new Runnable() {
+            public void run() {
+                btnFaad2.setEnabled( false );
+                btnFFmpeg.setEnabled( false );
+                btnStop.setEnabled( true );
+            }
+        });
+    }
+
+
+    public void playerDataRead( int bytes ) {
+    }
+
+
+    public void playerStopped() {
+        uiHandler.post( new Runnable() {
+            public void run() {
+                btnFaad2.setEnabled( true );
+                btnFFmpeg.setEnabled( true );
+                btnStop.setEnabled( false );
+            }
+        });
+    }
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -52,17 +87,26 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener 
     public void onClick( View v ) {
         try {
             switch (v.getId()) {
-                case R.id.view_main_button_native:
+
+                case R.id.view_main_button_faad2:
                     stop();
-                    aacPlayer = new AACPlayer();
-                    aacPlayer.playAsync( getUrl(), AACPlayer.Quality.LOW_32 );
+                    aacPlayer = new DirectAACPlayer();
+                    aacPlayer.playAsync( getUrl(), FAADDecoder.create(), this );
                     break; 
 
+                case R.id.view_main_button_ffmpeg:
+                    stop();
+                    aacPlayer = new DirectAACPlayer();
+                    aacPlayer.playAsync( getUrl(), FFMPEGDecoder.create(), this );
+                    break; 
+
+                /*
                 case R.id.view_main_button_file:
                     stop();
                     aacFileChunkPlayer = new AACFileChunkPlayer( getUrl(), 8000, 8000 );
                     aacFileChunkPlayer.start();
                     break;
+                */
 
                 case R.id.view_main_button_stop:
                     stop();
@@ -85,15 +129,17 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener 
 
         setContentView( R.layout.main );
 
-        Button b1 = (Button) findViewById( R.id.view_main_button_native );
-        Button b2 = (Button) findViewById( R.id.view_main_button_file );
-        Button b3 = (Button) findViewById( R.id.view_main_button_stop );
+        btnFaad2 = (Button) findViewById( R.id.view_main_button_faad2 );
+        btnFFmpeg = (Button) findViewById( R.id.view_main_button_ffmpeg );
+        //Button b3 = (Button) findViewById( R.id.view_main_button_file );
+        btnStop = (Button) findViewById( R.id.view_main_button_stop );
 
         urlView = (AutoCompleteTextView) findViewById( R.id.view_main_edit_url );
 
-        b1.setOnClickListener( this );
-        b2.setOnClickListener( this );
-        b3.setOnClickListener( this );
+        btnFaad2.setOnClickListener( this );
+        btnFFmpeg.setOnClickListener( this );
+        //b3.setOnClickListener( this );
+        btnStop.setOnClickListener( this );
 
         history = new History( this );
         history.read();
@@ -101,9 +147,11 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener 
         if (history.size() == 0 ) {
             history.addUrl( "/sdcard/local/cro2-32.aac" );
             history.addUrl( "http://netshow.play.cz:8000/crocb32aac" );
+            history.addUrl( "http://2483.live.streamtheworld.com:80/KFTZFMAACCMP3" );
         }
 
         urlView.setAdapter( history.getArrayAdapter());
+        uiHandler = new Handler();
     }
 
 

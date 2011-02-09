@@ -29,20 +29,29 @@
 			/>
 
 			<Button
-				android:id="@+id/view_main_button_native"
-				android:text="@string/button_native"
+				android:id="@+id/view_main_button_faad2"
+				android:text="@string/button_faad2"
 				style="@style/button_main"
 			/>
 
+			<Button
+				android:id="@+id/view_main_button_ffmpeg"
+				android:text="@string/button_ffmpeg"
+				style="@style/button_main"
+			/>
+
+			<!--
 			<Button
 				android:id="@+id/view_main_button_file"
 				android:text="@string/button_file"
 				style="@style/button_main"
 			/>
+			-->
 
 			<Button
 				android:id="@+id/view_main_button_stop"
 				android:text="@string/button_stop"
+				android:enabled="false"
 				style="@style/button_main"
 			/>
 

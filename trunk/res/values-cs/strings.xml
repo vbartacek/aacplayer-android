@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="app_name">AAC Přehrávač</string>
-	<string name="button_native">Přehrávač I (FAAD2)</string>
-	<string name="button_file">Přehrávač II (file chunks)</string>
+	<string name="button_faad2">Přehrávač I (FAAD2)</string>
+	<string name="button_ffmpeg">Přehrávač II (FF-MPEG)</string>
+	<string name="button_file">Přehrávač III (file chunks)</string>
 </resources>

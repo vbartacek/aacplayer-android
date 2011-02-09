@@ -189,7 +189,7 @@ public class AACPlayer {
             if (pcmfeed != null) pcmfeed.stop();
             aacd.stop();
 
-            Log.i( LOG, "play(): average decoding time: " + profMs / profCount + " ms");
+            if (profCount > 0) Log.i( LOG, "play(): average decoding time: " + profMs / profCount + " ms");
         }
     }
 

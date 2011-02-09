@@ -1,0 +1,363 @@
+diff -c -r -N ../ffmpeg-0.6.1/libavcodec/allcodecs.c jni/ffmpeg/libavcodec/allcodecs.c
+*** ../ffmpeg-0.6.1/libavcodec/allcodecs.c	2010-06-03 23:36:38.000000000 +0200
+--- jni/ffmpeg/libavcodec/allcodecs.c	2011-02-09 16:53:28.000000000 +0100
+***************
+*** 25,30 ****
+--- 25,31 ----
+   */
+  
+  #include "avcodec.h"
++ #include "config.h"
+  
+  #define REGISTER_HWACCEL(X,x) { \
+            extern AVHWAccel x##_hwaccel; \
+diff -c -r -N ../ffmpeg-0.6.1/libavcodec/dsputil.c jni/ffmpeg/libavcodec/dsputil.c
+*** ../ffmpeg-0.6.1/libavcodec/dsputil.c	2010-04-20 16:45:34.000000000 +0200
+--- jni/ffmpeg/libavcodec/dsputil.c	2011-02-09 16:53:28.000000000 +0100
+***************
+*** 328,333 ****
+--- 328,334 ----
+      return s;
+  }
+  
++ #if HAVE_VIDEO
+  /* draw the edges of width 'w' of an image of size width, height */
+  //FIXME check that this is ok for mpeg4 interlaced
+  static void draw_edges_c(uint8_t *buf, int wrap, int width, int height, int w)
+***************
+*** 3797,3802 ****
+--- 3798,3805 ----
+  WRAPPER8_16_SQ(rd8x8_c, rd16_c)
+  WRAPPER8_16_SQ(bit8x8_c, bit16_c)
+  
++ #endif
++ 
+  static void vector_fmul_c(float *dst, const float *src, int len){
+      int i;
+      for(i=0; i<len; i++)
+***************
+*** 4007,4012 ****
+--- 4010,4016 ----
+      return res;
+  }
+  
++ #if HAVE_VIDEO
+  #define W0 2048
+  #define W1 2841 /* 2048*sqrt (2)*cos (1*pi/16) */
+  #define W2 2676 /* 2048*sqrt (2)*cos (2*pi/16) */
+***************
+*** 4136,4141 ****
+--- 4140,4146 ----
+  
+      dest[0] = cm[dest[0] + ((block[0] + 4)>>3)];
+  }
++ #endif
+  
+  static void just_return(void *mem av_unused, int stride av_unused, int h av_unused) { return; }
+  
+***************
+*** 4183,4188 ****
+--- 4188,4194 ----
+  
+      ff_check_alignment();
+  
++ #if HAVE_VIDEO
+  #if CONFIG_ENCODERS
+      if(avctx->dct_algo==FF_DCT_FASTINT) {
+          c->fdct = fdct_ifast;
+***************
+*** 4477,4482 ****
+--- 4483,4489 ----
+  
+      c->try_8x8basis= try_8x8basis_c;
+      c->add_8x8basis= add_8x8basis_c;
++ #endif
+  
+  #if CONFIG_VORBIS_DECODER
+      c->vorbis_inverse_coupling = vorbis_inverse_coupling;
+***************
+*** 4507,4512 ****
+--- 4514,4520 ----
+      c->sv_fmul_scalar[0] = sv_fmul_scalar_2_c;
+      c->sv_fmul_scalar[1] = sv_fmul_scalar_4_c;
+  
++ #if HAVE_VIDEO
+      c->shrink[0]= ff_img_copy_plane;
+      c->shrink[1]= ff_shrink22;
+      c->shrink[2]= ff_shrink44;
+***************
+*** 4562,4566 ****
+--- 4570,4575 ----
+      default:
+          av_log(avctx, AV_LOG_ERROR, "Internal error, IDCT permutation not set\n");
+      }
++ #endif
+  }
+  
+diff -c -r -N ../ffmpeg-0.6.1/libavcodec/utils.c jni/ffmpeg/libavcodec/utils.c
+*** ../ffmpeg-0.6.1/libavcodec/utils.c	2010-05-29 16:33:02.000000000 +0200
+--- jni/ffmpeg/libavcodec/utils.c	2011-02-09 16:53:28.000000000 +0100
+***************
+*** 207,212 ****
+--- 207,213 ----
+  #endif
+  }
+  
++ #if HAVE_VIDEO
+  void avcodec_align_dimensions(AVCodecContext *s, int *width, int *height){
+      int chroma_shift = av_pix_fmt_descriptors[s->pix_fmt].log2_chroma_w;
+      int linesize_align[4];
+***************
+*** 415,420 ****
+--- 416,422 ----
+      s->release_buffer(s, &temp_pic); // Release old frame
+      return 0;
+  }
++ #endif
+  
+  int avcodec_default_execute(AVCodecContext *c, int (*func)(AVCodecContext *c2, void *arg2),void *arg, int *ret, int count, int size){
+      int i;
+***************
+*** 436,441 ****
+--- 438,444 ----
+      return 0;
+  }
+  
++ #if HAVE_VIDEO
+  enum PixelFormat avcodec_default_get_format(struct AVCodecContext *s, const enum PixelFormat *fmt){
+      while (*fmt != PIX_FMT_NONE && ff_is_hwaccel_pix_fmt(*fmt))
+          ++fmt;
+***************
+*** 458,463 ****
+--- 461,467 ----
+  
+      return pic;
+  }
++ #endif
+  
+  int attribute_align_arg avcodec_open(AVCodecContext *avctx, AVCodec *codec)
+  {
+***************
+*** 488,493 ****
+--- 492,498 ----
+          avctx->priv_data = NULL;
+      }
+  
++ #if HAVE_VIDEO
+      if(avctx->coded_width && avctx->coded_height)
+          avcodec_set_dimensions(avctx, avctx->coded_width, avctx->coded_height);
+      else if(avctx->width && avctx->height)
+***************
+*** 500,505 ****
+--- 505,511 ----
+          ret = AVERROR(EINVAL);
+          goto free_and_end;
+      }
++ #endif
+  
+      avctx->codec = codec;
+      if ((avctx->codec_type == AVMEDIA_TYPE_UNKNOWN || avctx->codec_type == codec->type) &&
+***************
+*** 548,553 ****
+--- 554,560 ----
+          return 0;
+  }
+  
++ #if HAVE_VIDEO
+  int attribute_align_arg avcodec_encode_video(AVCodecContext *avctx, uint8_t *buf, int buf_size,
+                           const AVFrame *pict)
+  {
+***************
+*** 620,625 ****
+--- 627,633 ----
+  
+      return ret;
+  }
++ #endif
+  
+  #if LIBAVCODEC_VERSION_MAJOR < 53
+  int attribute_align_arg avcodec_decode_audio2(AVCodecContext *avctx, int16_t *samples,
+***************
+*** 662,667 ****
+--- 670,676 ----
+      return ret;
+  }
+  
++ #if HAVE_VIDEO
+  #if LIBAVCODEC_VERSION_MAJOR < 53
+  int avcodec_decode_subtitle(AVCodecContext *avctx, AVSubtitle *sub,
+                              int *got_sub_ptr,
+***************
+*** 688,693 ****
+--- 697,703 ----
+          avctx->frame_number++;
+      return ret;
+  }
++ #endif
+  
+  av_cold int avcodec_close(AVCodecContext *avctx)
+  {
+***************
+*** 839,844 ****
+--- 849,855 ----
+      }
+  
+      switch(enc->codec_type) {
++ #if HAVE_VIDEO
+      case AVMEDIA_TYPE_VIDEO:
+          snprintf(buf, buf_size,
+                   "Video: %s%s",
+***************
+*** 874,879 ****
+--- 885,891 ----
+                       ", q=%d-%d", enc->qmin, enc->qmax);
+          }
+          break;
++ #endif
+      case AVMEDIA_TYPE_AUDIO:
+          snprintf(buf, buf_size,
+                   "Audio: %s",
+***************
+*** 1161,1166 ****
+--- 1173,1179 ----
+      { "ntsc-film", 24000, 1001 },
+  };
+  
++ #if HAVE_VIDEO
+  int av_parse_video_frame_size(int *width_ptr, int *height_ptr, const char *str)
+  {
+      int i;
+***************
+*** 1226,1231 ****
+--- 1239,1245 ----
+      else
+          return 0;
+  }
++ #endif
+  
+  int ff_match_2uint16(const uint16_t (*tab)[2], int size, int a, int b){
+      int i;
+diff -c -r -N ../ffmpeg-0.6.1/libavutil/avconfig.h jni/ffmpeg/libavutil/avconfig.h
+*** ../ffmpeg-0.6.1/libavutil/avconfig.h	1970-01-01 01:00:00.000000000 +0100
+--- jni/ffmpeg/libavutil/avconfig.h	2011-02-09 16:53:37.000000000 +0100
+***************
+*** 0 ****
+--- 1,5 ----
++ /* Generated by ffconf */
++ #ifndef AVUTIL_AVCONFIG_H
++ #define AVUTIL_AVCONFIG_H
++ #define AV_HAVE_BIGENDIAN 0
++ #endif /* AVUTIL_AVCONFIG_H */
+diff -c -r -N ../ffmpeg-0.6.1/libavutil/intreadwrite.h jni/ffmpeg/libavutil/intreadwrite.h
+*** ../ffmpeg-0.6.1/libavutil/intreadwrite.h	2010-03-02 04:16:24.000000000 +0100
+--- jni/ffmpeg/libavutil/intreadwrite.h	2011-02-09 16:53:37.000000000 +0100
+***************
+*** 23,28 ****
+--- 23,29 ----
+  #include "config.h"
+  #include "bswap.h"
+  #include "common.h"
++ #include "internal.h"
+  
+  typedef union {
+      uint64_t u64;
+diff -c -r -N ../ffmpeg-0.6.1/libavutil/log.c jni/ffmpeg/libavutil/log.c
+*** ../ffmpeg-0.6.1/libavutil/log.c	2010-04-23 23:27:26.000000000 +0200
+--- jni/ffmpeg/libavutil/log.c	2011-02-09 16:53:37.000000000 +0100
+***************
+*** 28,33 ****
+--- 28,38 ----
+  #include <stdlib.h>
+  #include "avutil.h"
+  #include "log.h"
++ #include "config.h"
++ 
++ #if OS_ANDROID
++ #include <android/log.h>
++ #endif
+  
+  #if LIBAVUTIL_VERSION_MAJOR > 50
+  static
+***************
+*** 36,41 ****
+--- 41,57 ----
+  
+  static int use_ansi_color=-1;
+  
++ #if OS_ANDROID
++ static int android_levels[7] = { 
++     ANDROID_LOG_FATAL,
++     ANDROID_LOG_ERROR,
++     ANDROID_LOG_WARN,
++     ANDROID_LOG_INFO,
++     ANDROID_LOG_VERBOSE,
++     ANDROID_LOG_DEBUG
++ };
++ #endif
++ 
+  #undef fprintf
+  static void colored_fputs(int color, const char *str){
+      if(use_ansi_color<0){
+***************
+*** 60,67 ****
+--- 76,87 ----
+      static int print_prefix=1;
+      static int count;
+      static char line[1024], prev[1024];
++ #if OS_ANDROID
++     static int prev_android_level;
++ #endif
+      static const uint8_t color[]={0x41,0x41,0x11,0x03,9,9,9};
+      AVClass* avc= ptr ? *(AVClass**)ptr : NULL;
++ 
+      if(level>av_log_level)
+          return;
+  #undef fprintf
+***************
+*** 78,87 ****
+--- 98,116 ----
+          return;
+      }
+      if(count>0){
++ #if OS_ANDROID
++         __android_log_print( prev_android_level, "FF-MPEG", "    Last message repeated %d times\n", count);
++ #else
+          fprintf(stderr, "    Last message repeated %d times\n", count);
++ #endif
+          count=0;
+      }
++ #if OS_ANDROID
++     prev_android_level = android_levels[av_clip(level>>3,0,6)];
++     __android_log_print( prev_android_level, "FF-MPEG", line);
++ #else
+      colored_fputs(color[av_clip(level>>3, 0, 6)], line);
++ #endif
+      strcpy(prev, line);
+  }
+  
+diff -c -r -N ../ffmpeg-0.6.1/libavformat/allformats.c jni/ffmpeg/libavformat/allformats.c
+*** ../ffmpeg-0.6.1/libavformat/allformats.c	2010-06-09 17:54:27.000000000 +0200
+--- jni/ffmpeg/libavformat/allformats.c	2011-02-09 16:53:33.000000000 +0100
+***************
+*** 21,26 ****
+--- 21,27 ----
+  #include "avformat.h"
+  #include "rtp.h"
+  #include "rdt.h"
++ #include "config.h"
+  
+  #define REGISTER_MUXER(X,x) { \
+      extern AVOutputFormat x##_muxer; \
+diff -c -r -N ../ffmpeg-0.6.1/libavformat/utils.c jni/ffmpeg/libavformat/utils.c
+*** ../ffmpeg-0.6.1/libavformat/utils.c	2010-06-15 15:31:27.000000000 +0200
+--- jni/ffmpeg/libavformat/utils.c	2011-02-09 16:53:33.000000000 +0100
+***************
+*** 32,37 ****
+--- 32,38 ----
+  #if CONFIG_NETWORK
+  #include "network.h"
+  #endif
++ #include "config.h"
+  
+  #undef NDEBUG
+  #include <assert.h>
