@@ -19,7 +19,11 @@
 package com.spoledge.aacplayer;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+
+import android.content.DialogInterface;
 import android.content.Intent;
+
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -29,6 +33,7 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 
 /**
@@ -41,6 +46,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     private Button btnFaad2;
     private Button btnFFmpeg;
     private Button btnStop;
+    private TextView txtStatus;
     private Handler uiHandler;
 
     private DirectAACPlayer aacPlayer;
@@ -72,6 +78,28 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
                 btnFaad2.setEnabled( true );
                 btnFFmpeg.setEnabled( true );
                 btnStop.setEnabled( false );
+                txtStatus.setText( R.string.text_stopped );
+            }
+        });
+    }
+
+
+    public void playerException( final Throwable t) {
+        uiHandler.post( new Runnable() {
+            public void run() {
+                new AlertDialog.Builder( AACPlayerActivity.this )
+                    .setTitle( R.string.text_exception )
+                    .setMessage( t.toString())
+                    .setNeutralButton( R.string.button_close,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick( DialogInterface dialog, int id) {
+                                dialog.cancel();
+                            }
+                        }
+                     )
+                    .show();
+
+                txtStatus.setText( R.string.text_stopped );
             }
         });
     }
@@ -92,12 +120,14 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
                     stop();
                     aacPlayer = new DirectAACPlayer();
                     aacPlayer.playAsync( getUrl(), FAADDecoder.create(), this );
+                    txtStatus.setText( R.string.text_using_FAAD2 );
                     break; 
 
                 case R.id.view_main_button_ffmpeg:
                     stop();
                     aacPlayer = new DirectAACPlayer();
                     aacPlayer.playAsync( getUrl(), FFMPEGDecoder.create(), this );
+                    txtStatus.setText( R.string.text_using_FFmpeg );
                     break; 
 
                 /*
@@ -105,6 +135,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
                     stop();
                     aacFileChunkPlayer = new AACFileChunkPlayer( getUrl(), 8000, 8000 );
                     aacFileChunkPlayer.start();
+                    txtStatus.setText( R.string.text_using_file_chunks );
                     break;
                 */
 
@@ -135,6 +166,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
         btnStop = (Button) findViewById( R.id.view_main_button_stop );
 
         urlView = (AutoCompleteTextView) findViewById( R.id.view_main_edit_url );
+        txtStatus = (TextView) findViewById( R.id.view_main_text_what );
 
         btnFaad2.setOnClickListener( this );
         btnFFmpeg.setOnClickListener( this );

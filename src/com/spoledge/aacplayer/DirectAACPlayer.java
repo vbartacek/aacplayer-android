@@ -74,6 +74,8 @@ public class DirectAACPlayer {
                 }
                 catch (Exception e) {
                     Log.e( LOG, "playAsync():", e);
+
+                    if (clb != null) clb.playerException( e );
                 }
             }
         }).start();
@@ -209,9 +211,9 @@ public class DirectAACPlayer {
             decoder.stop();
 
             if (profCount > 0) Log.i( LOG, "play(): average decoding time: " + profMs / profCount + " ms");
-        }
 
-        if (clb != null) clb.playerStopped();
+            if (clb != null) clb.playerStopped();
+        }
     }
 
 
