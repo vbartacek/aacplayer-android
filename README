@@ -4,15 +4,9 @@ http://www.spoledge.com
 
 The source code can be obtained at http://code.google.com/p/aacplayer-android/
 
-This is a port of FAAD2 (Freeware Advanced Audio (AAC) Decoder
-including SBR decoding) and FFmpeg library to Android platform.
-
-This program uses FAAD2 library to decode AAC streams.
-For more information about FAAD2, please visit http://www.audiocoding.com/
-
-This software uses libraries from the FFmpeg project under the LGPLv2.1
-For more information about FFmpeg, please visit http://ffmpeg.org/
-
+This is a port of the following open source libraries to Android platform.
+    * FAAD2 (Freeware Advanced Audio (AAC) Decoder including SBR decoding)
+    * FFmpeg library (only AAC decoder)
 
 
 COPYRIGHTS
@@ -39,6 +33,18 @@ For this software the following license applies:
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ******************************************************************************
 
+NOTE-FAAD2:
+    This program uses FAAD2 library to decode AAC streams.
+    FAAD2 library is licensed under the terms of GPLv2.
+    For more information about FAAD2, please visit http://www.audiocoding.com/
+
+
+NOTE-FFmpeg:
+    This software uses libraries from the FFmpeg project under the LGPLv2.1.
+    As the FFmpeg source code was modified (see the file ffmpeg-0.6.1.patch),
+    the GPL license s applied to the modified FFmpeg source code.
+    For more information about FFmpeg, please visit http://ffmpeg.org/
+
 
 !!! PLEASE NOTE !!!
 
@@ -60,16 +66,26 @@ Requirements:
     - Android NDK - r4
 
 Preparing FFmpeg sources:
-    0) download FFmpeg 0.6.1
+-------------------------
 
-    1) copy directories libavcodec, libavformat and libavutil to jni/ffmpeg:
-        cp -R ../ffmpeg-0.6.1/libavcodec jni/ffmpeg
-        cp -R ../ffmpeg-0.6.1/libavformat jni/ffmpeg
-        cp -R ../ffmpeg-0.6.1/libavutil jni/ffmpeg
+NOTE: Only when build from SVN. You can skip this if downloaded as a zip.
+    The zipped version already contains the patched FFmpeg source code.
+
+    0) download FFmpeg 0.6.1 sources and extract it to a temporary directory <FFMPEG>
+        You can download the sources from the "Downloads" tab:
+            http://code.google.com/p/aacplayer-android/downloads/list
+
+    1) copy FFmpeg's directories libavcodec, libavformat and libavutil to jni/ffmpeg:
+        cp -R <FFMPEG>/libavcodec jni/ffmpeg
+        cp -R <FFMPEG>/libavformat jni/ffmpeg
+        cp -R <FFMPEG>/libavutil jni/ffmpeg
 
     2) Apply patch:
         patch -p0  < ffmpeg-0.6.1.patch
 
+
+Compiling:
+----------
 
 NOTE: If you want to compile only FAAD2 library, then just use
     Android-FAAD2-only.mk file:
@@ -81,7 +97,6 @@ NOTE: If you want to compile only FAAD2 library, then just use
     able to use the FFmpeg decoder !
 
 
-Compiling:
     1) copy sample.local.properties to local.properties and edit it
         (path to Android SDK)
 
@@ -101,15 +116,22 @@ Note:
 RUNNING
 =======
 
-There are two options of playing AAC files:
+There are these options of playing AAC files:
+
     1) playing using the FAAD2 decoder native library
             + should work on all 1.5+ platforms
             - slow on emulator
             - patent license is needed
 
+    2) playing using the FFmpeg decoder native library
+            + should work on all 1.5+ platforms
+            - slow on emulator
+            - patent license is needed
+
+    /* currenlty not shown in the menu:
     2) playing using an internal AAC decoder (HTC Desire) by splitting the
         stream into small file chunks (having the ".aac" suffix)
             - only some devices support this
             - does not work on emulator
             - the playing is not smooth
-
+    */
