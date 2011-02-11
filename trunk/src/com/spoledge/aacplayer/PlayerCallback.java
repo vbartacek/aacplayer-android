@@ -31,6 +31,7 @@ public interface PlayerCallback {
     public void playerStarted();
     public void playerDataRead( int bytes );
     public void playerStopped();
+    public void playerException( Throwable t );
 
 }
 

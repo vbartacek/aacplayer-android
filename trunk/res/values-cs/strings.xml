@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="app_name">AAC Přehrávač</string>
+	<string name="button_close">Zavřít</string>
 	<string name="button_faad2">Přehrávač I (FAAD2)</string>
-	<string name="button_ffmpeg">Přehrávač II (FF-MPEG)</string>
+	<string name="button_ffmpeg">Přehrávač II (FFmpeg)</string>
 	<string name="button_file">Přehrávač III (file chunks)</string>
+	<string name="text_exception">Chyba</string>
+	<string name="text_using_FAAD2">Používám FAAD2 ...</string>
+	<string name="text_using_FFmpeg">Používám FFmpeg ...</string>
+	<string name="text_using_file_chunks">Používám file chunks ...</string>
+	<string name="text_stopped">Zastaveno</string>
 </resources>
