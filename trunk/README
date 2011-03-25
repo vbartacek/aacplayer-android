@@ -84,6 +84,25 @@ NOTE: Only when build from SVN. You can skip this if downloaded as a zip.
         patch -p0  < ffmpeg-0.6.1.patch
 
 
+Preparing OpenCORE sources:
+-------------------------
+
+NOTE: Only when build from SVN. You can skip this if downloaded as a zip.
+    The zipped version already contains the patched OpenCORE source code.
+
+    0) checkout OpenCORE aacdec sources and extract it to a temporary directory <OPENCORE>
+        You can download the sources from the "Downloads" tab:
+            http://code.google.com/p/aacplayer-android/downloads/list
+
+    1) copy OpenCORE's directories src, include and oscl to jni/opencore-aacdec:
+        cp -R <OPENCORE>/src jni/opencore
+        cp -R <OPENCORE>/include jni/opencore
+        cp -R <OPENCORE>/oscl jni/opencore
+
+    2) Apply patch:
+        patch -p0  < opencore-aacdec.patch
+
+
 Compiling:
 ----------
 

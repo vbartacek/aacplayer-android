@@ -40,6 +40,12 @@
 				style="@style/button_main"
 			/>
 
+			<Button
+				android:id="@+id/view_main_button_opencore"
+				android:text="@string/button_opencore"
+				style="@style/button_main"
+			/>
+
 			<!--
 			<Button
 				android:id="@+id/view_main_button_file"
