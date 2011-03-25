@@ -45,6 +45,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     private AutoCompleteTextView urlView;
     private Button btnFaad2;
     private Button btnFFmpeg;
+    private Button btnOpenCORE;
     private Button btnStop;
     private TextView txtStatus;
     private Handler uiHandler;
@@ -62,6 +63,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
             public void run() {
                 btnFaad2.setEnabled( false );
                 btnFFmpeg.setEnabled( false );
+                btnOpenCORE.setEnabled( false );
                 btnStop.setEnabled( true );
             }
         });
@@ -77,6 +79,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
             public void run() {
                 btnFaad2.setEnabled( true );
                 btnFFmpeg.setEnabled( true );
+                btnOpenCORE.setEnabled( true );
                 btnStop.setEnabled( false );
                 txtStatus.setText( R.string.text_stopped );
             }
@@ -130,6 +133,13 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
                     txtStatus.setText( R.string.text_using_FFmpeg );
                     break; 
 
+                case R.id.view_main_button_opencore:
+                    stop();
+                    aacPlayer = new DirectAACPlayer();
+                    aacPlayer.playAsync( getUrl(), OpenCOREDecoder.create(), this );
+                    txtStatus.setText( R.string.text_using_OpenCORE );
+                    break; 
+
                 /*
                 case R.id.view_main_button_file:
                     stop();
@@ -162,6 +172,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
 
         btnFaad2 = (Button) findViewById( R.id.view_main_button_faad2 );
         btnFFmpeg = (Button) findViewById( R.id.view_main_button_ffmpeg );
+        btnOpenCORE = (Button) findViewById( R.id.view_main_button_opencore );
         //Button b3 = (Button) findViewById( R.id.view_main_button_file );
         btnStop = (Button) findViewById( R.id.view_main_button_stop );
 
@@ -170,6 +181,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
 
         btnFaad2.setOnClickListener( this );
         btnFFmpeg.setOnClickListener( this );
+        btnOpenCORE.setOnClickListener( this );
         //b3.setOnClickListener( this );
         btnStop.setOnClickListener( this );
 

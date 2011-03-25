@@ -126,6 +126,7 @@ public class DirectAACPlayer {
             Decoder.Info info = decoder.start( inputBuffer );
 
             Log.d( LOG, "play(): samplerate=" + info.getSampleRate() + ", channels=" + info.getChannels());
+//if (info != null) throw new RuntimeException("Breakpoint");
 
             if (info.getChannels() > 2) {
                 throw new RuntimeException("Too many channels detected: " + info.getChannels());

@@ -74,6 +74,12 @@
 		<exec executable="${ndk.home}/ndk-build"/>
 	</target>
 
+	<target name="mrproper" depends="clean" description="Clears all including the JNI objects.">
+		<delete includeemptydirs="true">
+			<fileset dir="libs" includes="**/*"/>
+		</delete>
+	</target>
+
 	<target name="all" depends="native,debug" description="Builds everything - debug mode">
 	</target>
 

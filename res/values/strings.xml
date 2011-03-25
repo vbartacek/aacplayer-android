@@ -4,11 +4,13 @@
 	<string name="button_close">Close</string>
 	<string name="button_faad2">Player I (FAAD2)</string>
 	<string name="button_ffmpeg">Player II (FFmpeg)</string>
-	<string name="button_file">Player III (file chunks)</string>
+	<string name="button_opencore">Player III (OpenCORE)</string>
+	<string name="button_file">Player IV (file chunks)</string>
 	<string name="button_stop">STOP</string>
 	<string name="text_exception">Error</string>
 	<string name="text_using_FAAD2">Using FAAD2 ...</string>
 	<string name="text_using_FFmpeg">Using FFmpeg ...</string>
+	<string name="text_using_OpenCORE">Using OpenCORE ...</string>
 	<string name="text_using_file_chunks">Using file chunks ...</string>
 	<string name="text_revision">$Revision$</string>
 	<string name="text_stopped">Stopped</string>
