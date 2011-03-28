@@ -7,6 +7,7 @@ The source code can be obtained at http://code.google.com/p/aacplayer-android/
 This is a port of the following open source libraries to Android platform.
     * FAAD2 (Freeware Advanced Audio (AAC) Decoder including SBR decoding)
     * FFmpeg library (only AAC decoder)
+    * OpenCORE aacdec library
 
 
 COPYRIGHTS
@@ -46,6 +47,19 @@ NOTE-FFmpeg:
     For more information about FFmpeg, please visit http://ffmpeg.org/
 
 
+NOTE-OpenCORE:
+    This software uses libraries from the OpenCORE project under the Apache
+    License, Version 2.0. The library can be used as is without patching
+    if it is compiled separately (using jni/aacdec/Android-OpenCORE-only.mk).
+    If you want to compile all libraries together - namely OpenCORE + FAAD2,
+    then due to a linking issue you have to patch the OpenCORE lib
+    (see the file jni/opencore-aacdec.patch). The patch itself as well
+    as the final patched files are licensed under the Apache License,
+    Version 2 (see jni/opencore-aacdec/Apache-LICENSE-2.0.txt).
+    For more information about openCORE aacdec, please visit
+    http://code.google.com/p/opencore-aacdec/
+
+
 !!! PLEASE NOTE !!!
 
 that the use of this software may require the payment of
@@ -70,6 +84,8 @@ Preparing FFmpeg sources:
 
 NOTE: Only when build from SVN. You can skip this if downloaded as a zip.
     The zipped version already contains the patched FFmpeg source code.
+    Also you do not need to do this if you plan to not compile this particular
+    library (see below).
 
     0) download FFmpeg 0.6.1 sources and extract it to a temporary directory <FFMPEG>
         You can download the sources from the "Downloads" tab:
@@ -89,9 +105,11 @@ Preparing OpenCORE sources:
 
 NOTE: Only when build from SVN. You can skip this if downloaded as a zip.
     The zipped version already contains the patched OpenCORE source code.
+    Also you do not need to do this if you plan to not compile this particular
+    library (see below).
 
     0) checkout OpenCORE aacdec sources and extract it to a temporary directory <OPENCORE>
-        You can download the sources from the "Downloads" tab:
+        You can also download the sources from the "Downloads" tab:
             http://code.google.com/p/aacplayer-android/downloads/list
 
     1) copy OpenCORE's directories src, include and oscl to jni/opencore-aacdec:
@@ -99,8 +117,9 @@ NOTE: Only when build from SVN. You can skip this if downloaded as a zip.
         cp -R <OPENCORE>/include jni/opencore
         cp -R <OPENCORE>/oscl jni/opencore
 
-    2) Apply patch:
-        patch -p0  < opencore-aacdec.patch
+    2) Go to directory "jni" and apply patch:
+        cd jni
+        patch -Np0 < opencore-aacdec.patch
 
 
 Compiling:
@@ -110,10 +129,20 @@ NOTE: If you want to compile only FAAD2 library, then just use
     Android-FAAD2-only.mk file:
         cp jni/aac-decoder/Android-FAAD2-only.mk jni/aac-decoder/Android.mk
 
+    In that case you do not need to download and patch FFmpeg/OpenCORE sources at all.
+    
+    By doing this you will be able to compile the project, but you will not be
+    able to use the FFmpeg/OpenCORE decoders !
+
+
+NOTE: If you want to compile only OpenCORE library, then just use
+    Android-OpenCORE-only.mk file:
+        cp jni/aac-decoder/Android-OpenCORE-only.mk jni/aac-decoder/Android.mk
+
     In that case you do not need to download and patch FFmpeg sources at all.
     
     By doing this you will be able to compile the project, but you will not be
-    able to use the FFmpeg decoder !
+    able to use the FFmpeg/FAAD2 decoders !
 
 
     1) copy sample.local.properties to local.properties and edit it
@@ -145,6 +174,12 @@ There are these options of playing AAC files:
     2) playing using the FFmpeg decoder native library
             + should work on all 1.5+ platforms
             - slow on emulator
+            - patent license is needed
+
+    3) playing using the OpenCORE decoder native library
+            + fast on all types of devices - even those not having FPU
+            + should work on all 1.5+ platforms
+            - still slow on emulator, but not so much
             - patent license is needed
 
     /* currenlty not shown in the menu:
