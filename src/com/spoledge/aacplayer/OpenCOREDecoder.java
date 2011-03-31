@@ -58,7 +58,7 @@ public final class OpenCOREDecoder extends Decoder {
      */
     public static synchronized OpenCOREDecoder create() {
         if (!libLoaded) {
-            System.loadLibrary( "AACDecoder" );
+            System.loadLibrary( "aacopencore-aacdec" );
 
             libLoaded = true;
         }

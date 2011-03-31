@@ -31,18 +31,21 @@
 			<Button
 				android:id="@+id/view_main_button_faad2"
 				android:text="@string/button_faad2"
+				android:enabled="false"
 				style="@style/button_main"
 			/>
 
 			<Button
 				android:id="@+id/view_main_button_ffmpeg"
 				android:text="@string/button_ffmpeg"
+				android:enabled="false"
 				style="@style/button_main"
 			/>
 
 			<Button
 				android:id="@+id/view_main_button_opencore"
 				android:text="@string/button_opencore"
+				android:enabled="false"
 				style="@style/button_main"
 			/>
 

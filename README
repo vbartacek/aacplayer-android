@@ -17,7 +17,7 @@ For this software the following license applies:
 
 ******************************************************************************
 ** Freeware Advanced Audio (AAC) Player for Android
-** Copyright (C) 2010 Spolecne s.r.o., http://www.spoledge.com
+** Copyright (C) 2011 Spolecne s.r.o., http://www.spoledge.com
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -50,13 +50,13 @@ NOTE-FFmpeg:
 NOTE-OpenCORE:
     This software uses libraries from the OpenCORE project under the Apache
     License, Version 2.0. The library can be used as is without patching
-    if it is compiled separately (using jni/aacdec/Android-OpenCORE-only.mk).
+    if it is compiled separately (see below).
     If you want to compile all libraries together - namely OpenCORE + FAAD2,
     then due to a linking issue you have to patch the OpenCORE lib
     (see the file jni/opencore-aacdec.patch). The patch itself as well
     as the final patched files are licensed under the Apache License,
     Version 2 (see jni/opencore-aacdec/Apache-LICENSE-2.0.txt).
-    For more information about openCORE aacdec, please visit
+    For more information about OpenCORE aacdec, please visit
     http://code.google.com/p/opencore-aacdec/
 
 
@@ -125,31 +125,17 @@ NOTE: Only when build from SVN. You can skip this if downloaded as a zip.
 Compiling:
 ----------
 
-NOTE: If you want to compile only FAAD2 library, then just use
-    Android-FAAD2-only.mk file:
-        cp jni/aac-decoder/Android-FAAD2-only.mk jni/aac-decoder/Android.mk
-
-    In that case you do not need to download and patch FFmpeg/OpenCORE sources at all.
-    
-    By doing this you will be able to compile the project, but you will not be
-    able to use the FFmpeg/OpenCORE decoders !
-
-
-NOTE: If you want to compile only OpenCORE library, then just use
-    Android-OpenCORE-only.mk file:
-        cp jni/aac-decoder/Android-OpenCORE-only.mk jni/aac-decoder/Android.mk
-
-    In that case you do not need to download and patch FFmpeg sources at all.
-    
-    By doing this you will be able to compile the project, but you will not be
-    able to use the FFmpeg/FAAD2 decoders !
-
-
-    1) copy sample.local.properties to local.properties and edit it
+    1) copy sample.local.properties to local.properties and edit local.properties:
         (path to Android SDK)
 
-    2) copy sample.ant.properties to .ant.properties and edit it
-        (path to Android NDK)
+    2) copy sample.ant.properties to .ant.properties and edit .ant.properties:
+        - path to Android NDK
+        - list of AAC decoders to be compiled
+            - you can choose one of FAAD2, FFmpeg or OpenCORE decoders
+                or you can choose two or all of them - follow the instructions
+                in the properties file
+                NOTE: if you disable a particular decoder, then you do not
+                    need its source codes, but also you cannot use at runtime !
 
     3) run ant
 
@@ -157,7 +143,7 @@ NOTE: If you want to compile only OpenCORE library, then just use
         adb install bin/AACPlayer-debug.apk
 
 Note:
-    The compile script was tested on linux platform and there is 
+    The makefile scripts were tested on linux platform and there is 
     a possibility that it won't work on windows / macosx.
 
 
@@ -189,3 +175,4 @@ There are these options of playing AAC files:
             - does not work on emulator
             - the playing is not smooth
     */
+

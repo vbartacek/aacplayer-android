@@ -58,7 +58,7 @@ public final class FAADDecoder extends Decoder {
      */
     public static synchronized FAADDecoder create() {
         if (!libLoaded) {
-            System.loadLibrary( "AACDecoder" );
+            System.loadLibrary( "aacfaad2" );
 
             libLoaded = true;
         }

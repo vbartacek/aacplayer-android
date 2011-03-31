@@ -44,6 +44,25 @@ public abstract class Decoder {
     }
 
 
+    /**
+     * Decoder supported bit: FAAD2.
+     */
+    public static final int DECODER_FAAD2 = 0x01;
+
+    /**
+     * Decoder supported bit: FFMPEG.
+     */
+    public static final int DECODER_FFMPEG = 0x02;
+
+    /**
+     * Decoder supported bit: OpenCORE.
+     */
+    public static final int DECODER_OPENCORE = 0x04;
+
+
+    private static boolean libLoaded = false;
+
+
     ////////////////////////////////////////////////////////////////////////////
     // Public
     ////////////////////////////////////////////////////////////////////////////
@@ -68,6 +87,24 @@ public abstract class Decoder {
     public abstract void stop();
 
 
+    /**
+     * Loads decoder library.
+     * @return the supported decoders (bit array)
+     * @see DECODER_FAAD2
+     * @see DECODER_FFMPEG
+     * @see DECODER_OPENCORE
+     */
+    public static synchronized int load() {
+        if (!libLoaded) {
+            System.loadLibrary( "AACDecoder" );
+
+            libLoaded = true;
+        }
+
+        return nativeGetFeatures();
+    }
+
+
     ////////////////////////////////////////////////////////////////////////////
     // Protected
     ////////////////////////////////////////////////////////////////////////////
@@ -82,5 +119,11 @@ public abstract class Decoder {
         }
     }
 
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Private
+    ////////////////////////////////////////////////////////////////////////////
+
+    private static native int nativeGetFeatures();
 }
 

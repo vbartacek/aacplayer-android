@@ -50,6 +50,8 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     private TextView txtStatus;
     private Handler uiHandler;
 
+    private int dfeatures;
+
     private DirectAACPlayer aacPlayer;
     private AACFileChunkPlayer aacFileChunkPlayer;
 
@@ -77,9 +79,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     public void playerStopped() {
         uiHandler.post( new Runnable() {
             public void run() {
-                btnFaad2.setEnabled( true );
-                btnFFmpeg.setEnabled( true );
-                btnOpenCORE.setEnabled( true );
+                enableButtons();
                 btnStop.setEnabled( false );
                 txtStatus.setText( R.string.text_stopped );
             }
@@ -185,6 +185,13 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
         //b3.setOnClickListener( this );
         btnStop.setOnClickListener( this );
 
+        dfeatures = Decoder.load();
+        enableButtons();
+
+        if ((dfeatures & Decoder.DECODER_FAAD2) != 0) btnFaad2.setEnabled( true );
+        if ((dfeatures & Decoder.DECODER_FFMPEG) != 0) btnFFmpeg.setEnabled( true );
+        if ((dfeatures & Decoder.DECODER_OPENCORE) != 0) btnOpenCORE.setEnabled( true );
+
         history = new History( this );
         history.read();
 
@@ -222,6 +229,13 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
         history.addUrl( ret );
 
         return ret;
+    }
+
+
+    private void enableButtons() {
+        if ((dfeatures & Decoder.DECODER_FAAD2) != 0) btnFaad2.setEnabled( true );
+        if ((dfeatures & Decoder.DECODER_FFMPEG) != 0) btnFFmpeg.setEnabled( true );
+        if ((dfeatures & Decoder.DECODER_OPENCORE) != 0) btnOpenCORE.setEnabled( true );
     }
 }
 

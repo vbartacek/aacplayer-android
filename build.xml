@@ -11,6 +11,18 @@
 		 Control Systems. -->
 	<property file=".ant.properties" />
 
+	<fail unless="ndk.home">
+		Missing property.
+		The property 'ndk.home' is not set. It should point to Android NDK home dir.
+		Please add it to your '.ant.properties' file.
+	</fail>
+
+	<fail unless="aac.decoders">
+		Missing property.
+		The property 'aac.decoders' is not set. It should contain a list of jni modules.
+		Please add it to your '.ant.properties' file.
+	</fail>
+
 	<!-- The build.properties file can be created by you and is never touched
 		 by the 'android' tool. This is the place to change some of the default property values
 		 used by the Ant rules.
@@ -71,13 +83,15 @@
 
 
 	<target name="native" depends="compile" description="Builds native libs">
-		<exec executable="${ndk.home}/ndk-build"/>
+		<exec executable="${ndk.home}/ndk-build" failonerror="true">
+			<arg line="${make.options}"/>
+		</exec>
 	</target>
 
 	<target name="mrproper" depends="clean" description="Clears all including the JNI objects.">
-		<delete includeemptydirs="true">
-			<fileset dir="libs" includes="**/*"/>
-		</delete>
+		<exec executable="${ndk.home}/ndk-build">
+			<arg value="clean"/>
+		</exec>
 	</target>
 
 	<target name="all" depends="native,debug" description="Builds everything - debug mode">
