@@ -1,6 +1,6 @@
 /*
 ** AACDecoder - Freeware Advanced Audio (AAC) Decoder for Android
-** Copyright (C) 2010 Spolecne s.r.o., http://www.spoledge.com
+** Copyright (C) 2011 Spolecne s.r.o., http://www.spoledge.com
 **  
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -18,37 +18,31 @@
 **/
 
 #include <jni.h>
+/* Header for class com_spoledge_aacplayer_Decoder */
 
-/* Header for class com_spoledge_aacplayer_AACDecoder */
+#ifndef _Included_com_spoledge_aacplayer_Decoder
+#define _Included_com_spoledge_aacplayer_Decoder
 
-#ifndef _Included_com_spoledge_aacplayer_AACDecoder
-#define _Included_com_spoledge_aacplayer_AACDecoder
 #ifdef __cplusplus
 extern "C" {
 #endif
-/*
- * Class:     com_spoledge_aacplayer_AACDecoder
- * Method:    nativeStart
- * Signature: ([BIILcom/spoledge/aacplayer/AACDecoder/AACInfo;)J
- */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_AACDecoder_nativeStart
-  (JNIEnv *, jobject, jbyteArray, jint, jint, jobject);
+
+#undef com_spoledge_aacplayer_Decoder_DECODER_FAAD2
+#define com_spoledge_aacplayer_Decoder_DECODER_FAAD2 1L
+
+#undef com_spoledge_aacplayer_Decoder_DECODER_FFMPEG
+#define com_spoledge_aacplayer_Decoder_DECODER_FFMPEG 2L
+
+#undef com_spoledge_aacplayer_Decoder_DECODER_OPENCORE
+#define com_spoledge_aacplayer_Decoder_DECODER_OPENCORE 4L
 
 /*
- * Class:     com_spoledge_aacplayer_AACDecoder
- * Method:    nativeDecode
- * Signature: (J[BII[B)I
+ * Class:     com_spoledge_aacplayer_Decoder
+ * Method:    nativeGetFeatures
+ * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_AACDecoder_nativeDecode
-  (JNIEnv *, jobject, jint, jbyteArray, jint, jint, jshortArray, jint);
-
-/*
- * Class:     com_spoledge_aacplayer_AACDecoder
- * Method:    nativeStop
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_com_spoledge_aacplayer_AACDecoder_nativeStop
-  (JNIEnv *, jobject, jint);
+JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_Decoder_nativeGetFeatures
+  (JNIEnv *, jclass);
 
 #ifdef __cplusplus
 }

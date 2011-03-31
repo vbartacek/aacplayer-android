@@ -1,1 +1,15 @@
-include $(call all-subdir-makefiles)
+mydir := $(call my-dir)
+
+#
+# Include the aac.decoders property:
+#
+include $(mydir)/../.ant.properties
+
+AAC_DECODERS :=	$(aac.decoders)
+
+include $(mydir)/aac-decoder/Android.mk
+
+dump:
+	$(warning $(modules-dump-database))
+	$(warning $(dump-src-file-tags))
+	$(error Dump finished)

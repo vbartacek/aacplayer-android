@@ -26,11 +26,6 @@
 
 #define AACDW "AACDecoder4"
 
-#ifdef FAAD2_ONLY
-#define av_free free
-#define av_mallocz malloc
-#endif
-
 typedef struct _aacd4 {
     NeAACDecHandle hAac;
     unsigned long samplerate;
@@ -227,9 +222,9 @@ jint Java_com_spoledge_aacplayer_FAADDecoder_nativeDecode
     {
         if (info->bytesleft > info->bbsize)
         {
-            if (info->buffer != NULL) av_free( info->buffer );
+            if (info->buffer != NULL) free( info->buffer );
             info->buffer = NULL;
-            info->buffer = (unsigned char*) av_mallocz( info->bytesleft );
+            info->buffer = (unsigned char*) malloc( info->bytesleft );
             info->bbsize = info->bytesleft;
         }
 

@@ -58,7 +58,7 @@ public final class FFMPEGDecoder extends Decoder {
      */
     public static synchronized FFMPEGDecoder create() {
         if (!libLoaded) {
-            System.loadLibrary( "AACDecoder" );
+            System.loadLibrary( "aacffmpeg" );
 
             libLoaded = true;
         }
