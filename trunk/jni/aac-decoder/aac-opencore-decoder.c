@@ -232,14 +232,6 @@ jint Java_com_spoledge_aacplayer_OpenCOREDecoder_nativeDecode
         int produced = pExt->frameLength * pExt->desiredChannels;
         if (2 == pExt->aacPlusUpsamplingFactor) produced *= 2;
 
-        // swap bytes:
-        int cnt = produced;
-        jshort *ss = samples;
-        while (cnt-- > 0) {
-            uint16_t s = (uint16_t) *ss;
-            *(ss++) = (s >> 8) | (s << 8);
-        }
-
 //        print_bytes( samples, produced );
 //        __android_log_print(ANDROID_LOG_INFO, AACDW, "frame decoded bytesconsumed=%d, samples=%d", pExt->inputBufferUsedLength, produced );
 

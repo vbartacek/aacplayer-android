@@ -32,6 +32,7 @@ import java.net.URL;
 import java.net.URLConnection;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -108,6 +109,8 @@ public class DirectAACPlayer {
             Log.w( LOG, "play(): not selectable channel: " + rbc );
         }
 
+        Log.i( LOG, "ByteOrder: " + ByteOrder.nativeOrder());
+
         DirectBufferReader reader = new DirectBufferReader( 2048, 1024, 512, rbc );
         new Thread( reader ).start();
 
@@ -119,6 +122,8 @@ public class DirectAACPlayer {
 
         // profiling info
         long profMs = 0;
+        long profSamples = 0;
+        long profSampleRate = 0;
         int profCount = 0;
 
         try {
@@ -127,6 +132,7 @@ public class DirectAACPlayer {
 
             Log.d( LOG, "play(): samplerate=" + info.getSampleRate() + ", channels=" + info.getChannels());
 //if (info != null) throw new RuntimeException("Breakpoint");
+            profSampleRate = info.getSampleRate() * info.getChannels();
 
             if (info.getChannels() > 2) {
                 throw new RuntimeException("Too many channels detected: " + info.getChannels());
@@ -142,8 +148,9 @@ public class DirectAACPlayer {
             ShortBuffer[] buffers = new ShortBuffer[3];
 
             for (int i=0; i < buffers.length; i++) {
-                bbuffers[i] = ByteBuffer.allocateDirect( 2*samplesCapacity );
-                buffers[i] = bbuffers[i].asShortBuffer();
+                ByteBuffer bb = bbuffers[i] = ByteBuffer.allocateDirect( 2*samplesCapacity );
+                bb.order( ByteOrder.nativeOrder());
+                buffers[i] = bb.asShortBuffer();
             }
 
             ByteBuffer outputBBuffer = bbuffers[0]; 
@@ -181,6 +188,7 @@ public class DirectAACPlayer {
                 */
 
                 profMs += System.currentTimeMillis() - tsStart;
+                profSamples += nsamp;
                 profCount++;
 
                 Log.d( LOG, "play(): decoded " + nsamp + " samples" );
@@ -212,6 +220,9 @@ public class DirectAACPlayer {
             decoder.stop();
 
             if (profCount > 0) Log.i( LOG, "play(): average decoding time: " + profMs / profCount + " ms");
+            if (profMs > 999) Log.i( LOG, "play(): average rate (samples/sec): audio=" + profSampleRate
+                + ", decoding=" + (profSamples / (profMs/1000))
+                + ", audio/decoding= " + (profSamples / (profMs/1000) - profSampleRate) * 100 / profSampleRate + " %  (the higher, the better; negative means that decoding is slower than needed by audio)");
 
             if (clb != null) clb.playerStopped();
         }
