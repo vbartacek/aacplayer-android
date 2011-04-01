@@ -195,13 +195,6 @@ jint Java_com_spoledge_aacplayer_FAADDecoder_nativeDecode
         }
 
 //        __android_log_print(ANDROID_LOG_INFO, AACDW, "frame decoded bytesconsumed=%d, samples=%d", frame.bytesconsumed, frame.samples );
-        // swap bytes:
-        int cnt = frame.samples;
-        jshort *ss = samples;
-        while (cnt-- > 0) {
-            uint16_t s = (uint16_t) *ss;
-            *(ss++) = (s >> 8) | (s << 8);
-        }
 
         info->bytesleft -= frame.bytesconsumed;
         buffer += frame.bytesconsumed;

@@ -23,6 +23,7 @@ import android.util.Log;
 import java.io.IOException;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.ReadableByteChannel;
 
 
@@ -75,6 +76,7 @@ public class DirectBufferReader implements Runnable {
 
         for (int i=0; i < buffers.length; i++) {
             buffers[i] = ByteBuffer.allocateDirect( capacity );
+            buffers[i].order( ByteOrder.nativeOrder());
         }
     }
 
