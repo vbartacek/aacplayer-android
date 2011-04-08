@@ -118,9 +118,11 @@ public class DirectAACPlayer {
         //           24kbps: DirectBufferReader( 2048, 1024, 512, rbc )
         //           48kbps: DirectBufferReader( 8192, 4096, 1024, rbc )
         //           64kbps: DirectBufferReader( 8192, 4096, 1024, rbc )
+        //          128kbps: DirectBufferReader( 16384, 8192, 2048, rbc )
         //
         DirectBufferReader reader = new DirectBufferReader( 2048, 1024, 512, rbc );
         //DirectBufferReader reader = new DirectBufferReader( 8192, 4096, 1024, rbc );
+        //DirectBufferReader reader = new DirectBufferReader( 16384, 8192, 2048, rbc );
 
         new Thread( reader ).start();
 
