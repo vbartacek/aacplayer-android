@@ -199,6 +199,9 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
             history.addUrl( "/sdcard/local/cro2-32.aac" );
             history.addUrl( "http://netshow.play.cz:8000/crocb32aac" );
             history.addUrl( "http://2483.live.streamtheworld.com:80/KFTZFMAACCMP3" );
+            history.addUrl( "http://http.yourmuze.com:8000/play/paradise/l.aac" );
+            history.addUrl( "http://http.yourmuze.com:8000/play/paradise/m.aac" );
+            history.addUrl( "http://http.yourmuze.com:8000/play/paradise/h.aac" );
         }
 
         urlView.setAdapter( history.getArrayAdapter());

@@ -111,7 +111,17 @@ public class DirectAACPlayer {
 
         Log.i( LOG, "ByteOrder: " + ByteOrder.nativeOrder());
 
+        //
+        // NOTE: the buffer length must be adjusted to the expected stream bitrate/quality
+        //       The higher bitrate, the higher buffer
+        //       Experimental (this worked for http.yourmuze.com):
+        //           24kbps: DirectBufferReader( 2048, 1024, 512, rbc )
+        //           48kbps: DirectBufferReader( 8192, 4096, 1024, rbc )
+        //           64kbps: DirectBufferReader( 8192, 4096, 1024, rbc )
+        //
         DirectBufferReader reader = new DirectBufferReader( 2048, 1024, 512, rbc );
+        //DirectBufferReader reader = new DirectBufferReader( 8192, 4096, 1024, rbc );
+
         new Thread( reader ).start();
 
         try { Thread.sleep(500);} catch (InterruptedException e) {}
