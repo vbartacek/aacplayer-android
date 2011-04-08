@@ -59,9 +59,19 @@ public class DirectBufferReader implements Runnable {
 
     /**
      * Creates a new buffer.
-     * @param capacity the capacity of one buffer
+     *
+     * @param capacity the capacity of one buffer in bytes
+     *          = total allocated memory
+     *
      * @param minSize the min count of read bytes
-     * @param minOffset the min offset - can be used to prepend some bytes later
+     *          = everytime we call next(), then we get at least minSize bytes of input data
+     *
+     * @param minOffset the min offset
+     *          = can be used to prepend some bytes later
+     *          = this is used by the native decoder for prepending rest of the previous buffer
+     *            to the begining of the new buffer
+     *          = it means this must be long at least as the avg length of one input frame
+     *
      * @param rbc a readable channel that should be created in blocking mode.
      */
     public DirectBufferReader( int capacity, int minSize, int minOffset, ReadableByteChannel rbc ) {
