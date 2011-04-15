@@ -19,35 +19,35 @@
 
 #include <jni.h>
 
-/* Header for class com_spoledge_aacplayer_FFMPEGDecoder */
+/* Header for class com_spoledge_aacplayer_DirectFFMPEGDecoder */
 
-#ifndef _Included_com_spoledge_aacplayer_FFMPEGDecoder
-#define _Included_com_spoledge_aacplayer_FFMPEGDecoder
+#ifndef _Included_com_spoledge_aacplayer_DirectFFMPEGDecoder
+#define _Included_com_spoledge_aacplayer_DirectFFMPEGDecoder
 #ifdef __cplusplus
 extern "C" {
 #endif
 /*
- * Class:     com_spoledge_aacplayer_FFMPEGDecoder
+ * Class:     com_spoledge_aacplayer_DirectFFMPEGDecoder
  * Method:    nativeStart
  * Signature: (Ljava/nio/ByteBuffer;Lcom/spoledge/aacplayer/Decoder/Info;)I
  */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_FFMPEGDecoder_nativeStart
+JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_DirectFFMPEGDecoder_nativeStart
   (JNIEnv *, jobject, jobject, jint, jint, jobject);
 
 /*
- * Class:     com_spoledge_aacplayer_FFMPEGDecoder
+ * Class:     com_spoledge_aacplayer_DirectFFMPEGDecoder
  * Method:    nativeDecode
  * Signature: (ILjava/nio/ByteBuffer;Ljava/nio/ShortBuffer;)I
  */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_FFMPEGDecoder_nativeDecode
+JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_DirectFFMPEGDecoder_nativeDecode
   (JNIEnv *, jobject, jint, jobject, jint, jint, jobject, jint);
 
 /*
- * Class:     com_spoledge_aacplayer_FFMPEGDecoder
+ * Class:     com_spoledge_aacplayer_DirectFFMPEGDecoder
  * Method:    nativeStop
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_com_spoledge_aacplayer_FFMPEGDecoder_nativeStop
+JNIEXPORT void JNICALL Java_com_spoledge_aacplayer_DirectFFMPEGDecoder_nativeStop
   (JNIEnv *, jobject, jint);
 
 #ifdef __cplusplus

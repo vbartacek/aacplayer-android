@@ -97,11 +97,11 @@ static void* aacd4_prepare_buffer( aacd4 *info, jbyte *jbuffer, jint inOff, jint
 
 
 /*
- * Class:     com_spoledge_aacplayer_FAADDecoder
+ * Class:     com_spoledge_aacplayer_DirectFAADDecoder
  * Method:    nativeStart
  * Signature: (Ljava/nio/ByteBuffer;Lcom/spoledge/aacplayer/Decoder/Info;)I
  */
-jint Java_com_spoledge_aacplayer_FAADDecoder_nativeStart
+jint Java_com_spoledge_aacplayer_DirectFAADDecoder_nativeStart
   (JNIEnv *env, jobject thiz, jobject inBuf, jint inOff, jint inLen, jobject aacInfo)
 {
     jboolean isCopy;
@@ -138,11 +138,11 @@ jint Java_com_spoledge_aacplayer_FAADDecoder_nativeStart
 
 
 /*
- * Class:     com_spoledge_aacplayer_FAADDecoder
+ * Class:     com_spoledge_aacplayer_DirectFAADDecoder
  * Method:    nativeDecode
  * Signature: (ILjava/nio/ByteBuffer;Ljava/nio/ShortBuffer;)I
  */
-jint Java_com_spoledge_aacplayer_FAADDecoder_nativeDecode
+jint Java_com_spoledge_aacplayer_DirectFAADDecoder_nativeDecode
   (JNIEnv *env, jobject thiz, jint jinfo, jobject inBuf, jint inOff, jint inLen, jobject outBuf, jint outLen)
 {
     aacd4 *info;
@@ -230,11 +230,11 @@ jint Java_com_spoledge_aacplayer_FAADDecoder_nativeDecode
 
 
 /*
- * Class:     com_spoledge_aacplayer_FAADDecoder
+ * Class:     com_spoledge_aacplayer_DirectFAADDecoder
  * Method:    nativeStop
  * Signature: (I)V
  */
-void Java_com_spoledge_aacplayer_FAADDecoder_nativeStop
+void Java_com_spoledge_aacplayer_DirectFAADDecoder_nativeStop
   (JNIEnv *env, jobject thiz, jint jinfo)
 {
     aacd4_stop( (aacd4*)jinfo);

@@ -19,35 +19,35 @@
 
 #include <jni.h>
 
-/* Header for class com_spoledge_aacplayer_OpenCOREDecoder */
+/* Header for class com_spoledge_aacplayer_DirectOpenCOREDecoder */
 
-#ifndef _Included_com_spoledge_aacplayer_OpenCOREDecoder
-#define _Included_com_spoledge_aacplayer_OpenCOREDecoder
+#ifndef _Included_com_spoledge_aacplayer_DirectOpenCOREDecoder
+#define _Included_com_spoledge_aacplayer_DirectOpenCOREDecoder
 #ifdef __cplusplus
 extern "C" {
 #endif
 /*
- * Class:     com_spoledge_aacplayer_OpenCOREDecoder
+ * Class:     com_spoledge_aacplayer_DirectOpenCOREDecoder
  * Method:    nativeStart
  * Signature: (Ljava/nio/ByteBuffer;Lcom/spoledge/aacplayer/Decoder/Info;)I
  */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_OpenCOREDecoder_nativeStart
+JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_DirectOpenCOREDecoder_nativeStart
   (JNIEnv *, jobject, jobject, jint, jint, jobject);
 
 /*
- * Class:     com_spoledge_aacplayer_OpenCOREDecoder
+ * Class:     com_spoledge_aacplayer_DirectOpenCOREDecoder
  * Method:    nativeDecode
  * Signature: (ILjava/nio/ByteBuffer;Ljava/nio/ShortBuffer;)I
  */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_OpenCOREDecoder_nativeDecode
+JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_DirectOpenCOREDecoder_nativeDecode
   (JNIEnv *, jobject, jint, jobject, jint, jint, jobject, jint);
 
 /*
- * Class:     com_spoledge_aacplayer_OpenCOREDecoder
+ * Class:     com_spoledge_aacplayer_DirectOpenCOREDecoder
  * Method:    nativeStop
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_com_spoledge_aacplayer_OpenCOREDecoder_nativeStop
+JNIEXPORT void JNICALL Java_com_spoledge_aacplayer_DirectOpenCOREDecoder_nativeStop
   (JNIEnv *, jobject, jint);
 
 #ifdef __cplusplus

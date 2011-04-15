@@ -122,21 +122,21 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
                 case R.id.view_main_button_faad2:
                     stop();
                     aacPlayer = new DirectAACPlayer();
-                    aacPlayer.playAsync( getUrl(), FAADDecoder.create(), this );
+                    aacPlayer.playAsync( getUrl(), DirectFAADDecoder.create(), this );
                     txtStatus.setText( R.string.text_using_FAAD2 );
                     break; 
 
                 case R.id.view_main_button_ffmpeg:
                     stop();
                     aacPlayer = new DirectAACPlayer();
-                    aacPlayer.playAsync( getUrl(), FFMPEGDecoder.create(), this );
+                    aacPlayer.playAsync( getUrl(), DirectFFMPEGDecoder.create(), this );
                     txtStatus.setText( R.string.text_using_FFmpeg );
                     break; 
 
                 case R.id.view_main_button_opencore:
                     stop();
                     aacPlayer = new DirectAACPlayer();
-                    aacPlayer.playAsync( getUrl(), OpenCOREDecoder.create(), this );
+                    aacPlayer.playAsync( getUrl(), DirectOpenCOREDecoder.create(), this );
                     txtStatus.setText( R.string.text_using_OpenCORE );
                     break; 
 
@@ -185,7 +185,10 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
         //b3.setOnClickListener( this );
         btnStop.setOnClickListener( this );
 
+        //int decTypefeatures = Decoder.load();
+        //dfeatures = DirectDecoder.getFeatures();
         dfeatures = Decoder.load();
+
         enableButtons();
 
         if ((dfeatures & Decoder.DECODER_FAAD2) != 0) btnFaad2.setEnabled( true );

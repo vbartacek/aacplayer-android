@@ -1,6 +1,6 @@
 /*
 ** AACPlayer - Freeware Advanced Audio (AAC) Player for Android
-** Copyright (C) 2010 Spolecne s.r.o., http://www.spoledge.com
+** Copyright (C) 2011 Spolecne s.r.o., http://www.spoledge.com
 **  
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,25 +20,18 @@ package com.spoledge.aacplayer;
 
 import android.util.Log;
 
-public final class AACDecoder {
-    private static final String LOG = "AACDecoder";
+import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 
-    public static class AACInfo {
-        private int samplerate;
-        private int channels;
 
-        public int getChannels() {
-            return channels;
-        }
+public final class DirectOpenCOREDecoder extends DirectDecoder {
 
-        public int getSamplerate() {
-            return samplerate;
-        }
-    }
+    private static final String LOG = "DirectOpenCOREDecoder";
 
     private static enum State { IDLE, RUNNING };
 
     private static boolean libLoaded = false;
+
 
     ////////////////////////////////////////////////////////////////////////////
     // Attributes
@@ -52,7 +45,7 @@ public final class AACDecoder {
     // Constructors
     ////////////////////////////////////////////////////////////////////////////
 
-    private AACDecoder() {
+    private DirectOpenCOREDecoder() {
     }
 
 
@@ -63,26 +56,30 @@ public final class AACDecoder {
     /**
      * Creates a new decoder.
      */
-    public static synchronized AACDecoder create() {
+    public static synchronized DirectOpenCOREDecoder create() {
         if (!libLoaded) {
-            System.loadLibrary( "AACDecoder" );
+            System.loadLibrary( "aacopencore-aacdec" );
 
             libLoaded = true;
         }
 
-        return new AACDecoder();
+        return new DirectOpenCOREDecoder();
     }
 
 
     /**
      * Starts decoding AAC stream.
      */
-    public AACInfo start( byte[] buf, int off, int len ) {
+    public Info start( ByteBuffer inputBuffer ) {
         if (state != State.IDLE) throw new IllegalStateException();
         
-        AACInfo ret = new AACInfo();
+        Info ret = new Info();
 
-        aacdw = nativeStart( buf, off, len, ret );
+        Log.d( LOG, "decode() pos=" + inputBuffer.position() + ", len=" + inputBuffer.remaining()
+            + ", b1=" + inputBuffer.get(inputBuffer.position()) 
+            + ", b2=" + inputBuffer.get(inputBuffer.position()+1));
+
+        aacdw = nativeStart( inputBuffer, inputBuffer.position(), inputBuffer.remaining(), ret );
 
         state = State.RUNNING;
 
@@ -94,10 +91,14 @@ public final class AACDecoder {
      * Decodes AAC stream.
      * @return the number of samples produced (totally all channels = the length of the filled array)
      */
-    public int decode( byte[] buf, int off, int len, short[] samples, int outLen ) {
+    public int decode( ByteBuffer inputBuffer, ByteBuffer outputBuffer ) {
         if (state != State.RUNNING) throw new IllegalStateException();
 
-        return nativeDecode( aacdw, buf, off, len, samples, outLen );
+        int ret = nativeDecode( aacdw, inputBuffer, inputBuffer.position(), inputBuffer.remaining(), outputBuffer, outputBuffer.capacity()/2);
+
+        outputBuffer.limit( ret > 0 ? ret : 0 );
+
+        return ret;
     }
 
 
@@ -113,29 +114,18 @@ public final class AACDecoder {
         state = State.IDLE;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-    // Protected
-    ////////////////////////////////////////////////////////////////////////////
-
-    @Override
-    protected void finalize() {
-        try {
-            stop();
-        }
-        catch (Throwable t) {
-            t.printStackTrace();
-        }
-    }
-
 
     ////////////////////////////////////////////////////////////////////////////
     // Private
     ////////////////////////////////////////////////////////////////////////////
 
-    private native int nativeStart( byte[] buf, int off, int len, AACInfo aacInfo );
+    private native int nativeStart( ByteBuffer inputBuffer, int offset, int length, Info info );
 
-    private native int nativeDecode( int aacdw, byte[] buf, int off, int len, short[] samples, int outLen );
+    private native int nativeDecode( int aacdw, ByteBuffer inputBuffer, int inOff, int inLen, ByteBuffer outputBuffer, int outLen );
 
     private native void nativeStop( int aacdw );
 
 }
+
+
+

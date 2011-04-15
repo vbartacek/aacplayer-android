@@ -1,6 +1,6 @@
 /*
 ** AACPlayer - Freeware Advanced Audio (AAC) Player for Android
-** Copyright (C) 2011 Spolecne s.r.o., http://www.spoledge.com
+** Copyright (C) 2010 Spolecne s.r.o., http://www.spoledge.com
 **  
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,27 +24,25 @@ import java.nio.ShortBuffer;
 
 
 /**
- * This is the PCM Feeder.
- * Uses java.nio.* API.
+ * This is the PCM Feeder which uses arrays (short[]).
  */
-public class DirectPCMFeed extends AbstractPCMFeed {
+public class ArrayPCMFeed extends AbstractPCMFeed {
 
-    private static final String LOG = "DirectPCMFeed";
+    private static final String LOG = "ArrayPCMFeed";
 
 
     ////////////////////////////////////////////////////////////////////////////
     // Attributes
     ////////////////////////////////////////////////////////////////////////////
 
-    /**
-     * This variable holds buffer to be processed.
-     */
-    private ShortBuffer buffer;
+    private int sampleRate;
+    private int channels;
+    private int minBufferSizeInBytes;
 
-    /**
-     * This variable holds local buffer being processed by run() method.
-     */
-    private ShortBuffer lbuffer;
+    private short[] samples;
+    private int n;
+
+    private boolean stopped;
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -52,22 +50,22 @@ public class DirectPCMFeed extends AbstractPCMFeed {
     ////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Creates a new threaded PCM feeder which uses java.nio.* buffers.
+     * Creates a new threaded PCM feeder which uses arrays.
      * @param sampleRate the sampling rate
      * @param channels the number of channels (0 or 1)
      */
-    public DirectPCMFeed( int sampleRate, int channels) {
+    public ArrayPCMFeed( int sampleRate, int channels) {
         super( sampleRate, channels );
     }
 
 
     /**
-     * Creates a new threaded PCM feeder which uses java.nio.* buffers.
+     * Creates a new threaded PCM feeder which uses arrays.
      * @param sampleRate the sampling rate
      * @param channels the number of channels (0 or 1)
      * @param minBufferSizeInBytes the size of buffer used by AudioTrack object
      */
-    public DirectPCMFeed( int sampleRate, int channels, int minBufferSizeInBytes ) {
+    public ArrayPCMFeed( int sampleRate, int channels, int minBufferSizeInBytes ) {
         super( sampleRate, channels, minBufferSizeInBytes );
     }
 
@@ -79,16 +77,13 @@ public class DirectPCMFeed extends AbstractPCMFeed {
     /**
      * This is called by main thread when a new data are available.
      */
-    public synchronized void feed( ShortBuffer buffer ) {
-        Log.d( LOG, "feed() len=" + buffer.remaining());
-
-        while (this.buffer != null && !stopped) {
-            Log.d( LOG, "feed() waiting...");
+    public synchronized void feed( short[] samples, int n ) {
+        while (this.samples != null && !stopped) {
             try { wait(); } catch (InterruptedException e) {}
-            Log.d( LOG, "feed() awaken");
         }
 
-        this.buffer = buffer;
+        this.samples = samples;
+        this.n = n;
 
         notify();
     }
@@ -102,36 +97,17 @@ public class DirectPCMFeed extends AbstractPCMFeed {
      * Acquires samples into variable lsamples.
      * @return the actual size (in shorts) of the lsamples
      */
-    protected int acquireSamples() {
-        synchronized (this) {
-            while (buffer == null && !stopped) {
-                try { wait(); } catch (InterruptedException e) {}
-            }
-
-            lbuffer = buffer;
-            buffer = null;
-            notify();
+    protected synchronized int acquireSamples() {
+        while (n == 0 && !stopped) {
+            try { wait(); } catch (InterruptedException e) {}
         }
 
-        if (stopped) return 0;
+        lsamples = samples;
+        int ln = n;
 
-        int ln = lbuffer.remaining();
-
-        if (lbuffer.hasArray()) {
-            lsamples = lbuffer.array();
-        }
-        else {
-            if (lsamples == null || lsamples.length < lbuffer.capacity()) {
-                Log.i( LOG, "ShortBuffer not backed by array, creating own one...");
-                lsamples = null;
-                lsamples = new short[ lbuffer.capacity()];
-            }
-
-// hmm, this seems bad:
-long ts = System.currentTimeMillis();
-            lbuffer.get( lsamples, 0, ln );
-Log.d( LOG, "PCM lbuffer.get() " + (System.currentTimeMillis()-ts) + " ms");
-        }
+        samples = null;
+        n = 0;
+        notify();
 
         return ln;
     }
@@ -142,11 +118,8 @@ Log.d( LOG, "PCM lbuffer.get() " + (System.currentTimeMillis()-ts) + " ms");
      * This method is called always after processing the acquired lsamples.
      */
     protected void releaseSamples() {
-        if (lbuffer != null && lbuffer.hasArray()) {
-            lbuffer.clear();
-        }
+        // nothing to be done
     }
 
 }
-
 
