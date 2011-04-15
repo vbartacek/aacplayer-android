@@ -18,78 +18,63 @@
 **/
 package com.spoledge.aacplayer;
 
+import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
+
 
 /**
- * Parent class for all decoders.
+ * Parent class for all direct decoders.
  */
-public abstract class Decoder {
-
-    /**
-     * Info about the stream.
-     */
-    public static class Info {
-        private int sampleRate;
-        private int channels;
-
-        public int getChannels() {
-            return channels;
-        }
-
-        public int getSampleRate() {
-            return sampleRate;
-        }
-    }
-
-
-    /**
-     * Decoder type supported bit: ARRAY.
-     */
-    public static final int DECODER_TYPE_ARRAY = 0x01;
-
-    /**
-     * Decoder type supported bit: DIRECT.
-     */
-    public static final int DECODER_TYPE_DIRECT = 0x02;
-
-
-    /**
-     * Decoder supported bit: FAAD2.
-     */
-    public static final int DECODER_FAAD2 = 0x01;
-
-    /**
-     * Decoder supported bit: FFMPEG.
-     */
-    public static final int DECODER_FFMPEG = 0x02;
-
-    /**
-     * Decoder supported bit: OpenCORE.
-     */
-    public static final int DECODER_OPENCORE = 0x04;
-
-
-    private static boolean libLoaded = false;
-
+public abstract class DirectDecoder extends Decoder {
 
     ////////////////////////////////////////////////////////////////////////////
     // Public
     ////////////////////////////////////////////////////////////////////////////
 
+
+    /**
+     * Starts decoding stream.
+     */
+    public abstract Info start( ByteBuffer inputBuffer );
+
+
+    /**
+     * Decodes AAC stream.
+     * @return the number of samples produced (totally all channels = the length of the filled array)
+     */
+    public abstract int decode( ByteBuffer inputBuffer, ByteBuffer outputBuffer );
+
+
+    /**
+     * Stops the decoder and releases all resources.
+     */
+    public abstract void stop();
+
+
     /**
      * Loads decoder library.
-     * @return the supported decoder types (bit array)
-     * @see DECODER_TYPE_ARRAY
-     * @see DECODER_TYPE_DIRECT
+     * @return the supported decoders (bit array)
+     * @see DECODER_FAAD2
+     * @see DECODER_FFMPEG
      * @see DECODER_OPENCORE
      */
-    public static synchronized int load() {
-        if (!libLoaded) {
-            System.loadLibrary( "AACDecoder" );
-
-            libLoaded = true;
-        }
-
+    public static int getFeatures() {
         return nativeGetFeatures();
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Protected
+    ////////////////////////////////////////////////////////////////////////////
+
+    @Override
+    protected void finalize() {
+        try {
+            stop();
+        }
+        catch (Throwable t) {
+            t.printStackTrace();
+        }
     }
 
 
@@ -99,4 +84,5 @@ public abstract class Decoder {
 
     private static native int nativeGetFeatures();
 }
+
 

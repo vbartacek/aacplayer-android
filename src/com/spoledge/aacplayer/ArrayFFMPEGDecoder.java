@@ -1,6 +1,6 @@
 /*
 ** AACPlayer - Freeware Advanced Audio (AAC) Player for Android
-** Copyright (C) 2010 Spolecne s.r.o., http://www.spoledge.com
+** Copyright (C) 2011 Spolecne s.r.o., http://www.spoledge.com
 **  
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,13 +20,10 @@ package com.spoledge.aacplayer;
 
 import android.util.Log;
 
-import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
 
+public final class ArrayFFMPEGDecoder extends ArrayDecoder {
 
-public final class FFMPEGDecoder extends Decoder {
-
-    private static final String LOG = "FFMPEGDecoder";
+    private static final String LOG = "ArrayFFMPEGDecoder";
 
     private static enum State { IDLE, RUNNING };
 
@@ -45,7 +42,7 @@ public final class FFMPEGDecoder extends Decoder {
     // Constructors
     ////////////////////////////////////////////////////////////////////////////
 
-    private FFMPEGDecoder() {
+    private ArrayFFMPEGDecoder() {
     }
 
 
@@ -56,30 +53,26 @@ public final class FFMPEGDecoder extends Decoder {
     /**
      * Creates a new decoder.
      */
-    public static synchronized FFMPEGDecoder create() {
+    public static synchronized ArrayFFMPEGDecoder create() {
         if (!libLoaded) {
-            System.loadLibrary( "aacffmpeg" );
+            System.loadLibrary( "aacffmpegarr" );
 
             libLoaded = true;
         }
 
-        return new FFMPEGDecoder();
+        return new ArrayFFMPEGDecoder();
     }
 
 
     /**
      * Starts decoding AAC stream.
      */
-    public Info start( ByteBuffer inputBuffer ) {
+    public Info start( byte[] buf, int off, int len ) {
         if (state != State.IDLE) throw new IllegalStateException();
         
         Info ret = new Info();
 
-        Log.d( LOG, "decode() pos=" + inputBuffer.position() + ", len=" + inputBuffer.remaining()
-            + ", b1=" + inputBuffer.get(inputBuffer.position()) 
-            + ", b2=" + inputBuffer.get(inputBuffer.position()+1));
-
-        aacdw = nativeStart( inputBuffer, inputBuffer.position(), inputBuffer.remaining(), ret );
+        aacdw = nativeStart( buf, off, len, ret );
 
         state = State.RUNNING;
 
@@ -91,14 +84,10 @@ public final class FFMPEGDecoder extends Decoder {
      * Decodes AAC stream.
      * @return the number of samples produced (totally all channels = the length of the filled array)
      */
-    public int decode( ByteBuffer inputBuffer, ByteBuffer outputBuffer ) {
+    public int decode( byte[] buf, int off, int len, short[] samples, int outLen ) {
         if (state != State.RUNNING) throw new IllegalStateException();
 
-        int ret = nativeDecode( aacdw, inputBuffer, inputBuffer.position(), inputBuffer.remaining(), outputBuffer, outputBuffer.capacity()/2);
-
-        outputBuffer.limit( ret > 0 ? ret : 0 );
-
-        return ret;
+        return nativeDecode( aacdw, buf, off, len, samples, outLen );
     }
 
 
@@ -119,11 +108,14 @@ public final class FFMPEGDecoder extends Decoder {
     // Private
     ////////////////////////////////////////////////////////////////////////////
 
-    private native int nativeStart( ByteBuffer inputBuffer, int offset, int length, Info info );
+    private native int nativeStart( byte[] buf, int off, int len, Info info );
 
-    private native int nativeDecode( int aacdw, ByteBuffer inputBuffer, int inOff, int inLen, ByteBuffer outputBuffer, int outLen );
+    private native int nativeDecode( int aacdw, byte[] buf, int off, int len, short[] samples, int outLen );
 
     private native void nativeStop( int aacdw );
 
 }
+
+
+
 

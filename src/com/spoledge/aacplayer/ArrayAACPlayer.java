@@ -27,28 +27,21 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.ShortBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SelectableChannel;
-
 
 /**
  * This is the AACPlayer which uses AACDecoder to decode AAC stream into PCM samples.
  * Uses java.nio.* API.
  */
-public class DirectAACPlayer extends AACPlayer {
+public class ArrayAACPlayer extends AACPlayer {
 
-    private static final String LOG = "DirectAACPlayer";
+    private static final String LOG = "ArrayAACPlayer";
 
 
     ////////////////////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////////////////////
 
-    public DirectAACPlayer() {
+    public ArrayAACPlayer() {
     }
 
 
@@ -57,7 +50,7 @@ public class DirectAACPlayer extends AACPlayer {
     ////////////////////////////////////////////////////////////////////////////
 
     public void play( String url, Decoder decoder, PlayerCallback clb ) throws Exception {
-        DirectDecoder ddecoder = (DirectDecoder) decoder;
+        ArrayDecoder adecoder = (ArrayDecoder) decoder;
 
         if (url.indexOf( ':' ) > 0) {
             URLConnection cn = new URL( url ).openConnection();
@@ -65,9 +58,9 @@ public class DirectAACPlayer extends AACPlayer {
 
             dumpHeaders( cn );
 
-            play( Channels.newChannel( cn.getInputStream()), ddecoder, clb ); 
+            play( cn.getInputStream(), adecoder, clb ); 
         }
-        else play( new FileInputStream( url ).getChannel(), ddecoder, clb );
+        else play( new FileInputStream( url ), adecoder, clb );
     }
 
 
@@ -75,35 +68,21 @@ public class DirectAACPlayer extends AACPlayer {
     // Private
     ////////////////////////////////////////////////////////////////////////////
 
-    private void play( ReadableByteChannel rbc, DirectDecoder decoder, PlayerCallback clb ) throws Exception {
+    private void play( InputStream is, ArrayDecoder decoder, PlayerCallback clb ) throws Exception {
         if (clb != null) clb.playerStarted();
-
-        if (rbc instanceof SelectableChannel) {
-            try {
-                ((SelectableChannel) rbc).configureBlocking( true );
-            }
-            catch (IOException e) {
-                Log.e( LOG, "play(): cannot adjust blocking", e );
-            }
-        }
-        else {
-            Log.w( LOG, "play(): not selectable channel: " + rbc );
-        }
-
-        Log.i( LOG, "ByteOrder: " + ByteOrder.nativeOrder());
 
         //
         // NOTE: the buffer length must be adjusted to the expected stream bitrate/quality
         //       The higher bitrate, the higher buffer
         //       Experimental (this worked for http.yourmuze.com):
-        //           24kbps: DirectBufferReader( 2048, 1024, 512, rbc )
-        //           48kbps: DirectBufferReader( 8192, 4096, 1024, rbc )
-        //           64kbps: DirectBufferReader( 8192, 4096, 1024, rbc )
-        //          128kbps: DirectBufferReader( 16384, 8192, 2048, rbc )
+        //           24kbps: ArrayBufferReader( 2048, 1024, is )
+        //           48kbps: ArrayBufferReader( 8192, 4096, is )
+        //           64kbps: ArrayBufferReader( 8192, 4096, is )
+        //          128kbps: ArrayBufferReader( 16384, 8192, is )
         //
-        DirectBufferReader reader = new DirectBufferReader( 2048, 1024, 512, rbc );
-        //DirectBufferReader reader = new DirectBufferReader( 8192, 4096, 1024, rbc );
-        //DirectBufferReader reader = new DirectBufferReader( 16384, 8192, 2048, rbc );
+        ArrayBufferReader reader = new ArrayBufferReader( 2048, 1024, is );
+        //ArrayBufferReader reader = new ArrayBufferReader( 8192, 4096, is );
+        //ArrayBufferReader reader = new ArrayBufferReader( 16384, 8192, is );
 
         new Thread( reader ).start();
 
@@ -111,7 +90,7 @@ public class DirectAACPlayer extends AACPlayer {
 
         stopped = false;
 
-        DirectPCMFeed pcmfeed = null;
+        ArrayPCMFeed pcmfeed = null;
 
         // profiling info
         long profMs = 0;
@@ -120,8 +99,8 @@ public class DirectAACPlayer extends AACPlayer {
         int profCount = 0;
 
         try {
-            ByteBuffer inputBuffer = reader.next();
-            Decoder.Info info = decoder.start( inputBuffer );
+            ArrayBufferReader.Buffer inputBuffer = reader.next();
+            Decoder.Info info = decoder.start( inputBuffer.getData(), 0, inputBuffer.getSize());
 
             Log.d( LOG, "play(): samplerate=" + info.getSampleRate() + ", channels=" + info.getChannels());
 //if (info != null) throw new RuntimeException("Breakpoint");
@@ -137,48 +116,23 @@ public class DirectAACPlayer extends AACPlayer {
             //   - one is enqueued / passed to PCMFeeder - non-blocking op
             int samplesCapacity = info.getChannels() * info.getSampleRate() * 2;
 
-            ByteBuffer[] bbuffers = new ByteBuffer[3];
-            ShortBuffer[] buffers = new ShortBuffer[3];
+            short[][] buffers = new short[3][];
 
             for (int i=0; i < buffers.length; i++) {
-                ByteBuffer bb = bbuffers[i] = ByteBuffer.allocateDirect( 2*samplesCapacity );
-                bb.order( ByteOrder.nativeOrder());
-                buffers[i] = bb.asShortBuffer();
+                buffers[i] = new short[ samplesCapacity ];
             }
 
-            ByteBuffer outputBBuffer = bbuffers[0]; 
-            ShortBuffer outputBuffer = buffers[0]; 
+            short[] outputBuffer = buffers[0]; 
 
             int samplespoolindex = 0;
 
-            pcmfeed = new DirectPCMFeed( info.getSampleRate(), info.getChannels());
+            pcmfeed = new ArrayPCMFeed( info.getSampleRate(), info.getChannels());
             new Thread(pcmfeed).start();
 
             do {
                 long tsStart = System.currentTimeMillis();
 
-                /*
-                outputBBuffer.put(0, (byte) 0xAB ); 
-                outputBBuffer.put(1, (byte) 0xCD ); 
-
-                if (inputBuffer.position()+1 < inputBuffer.limit())
-                    Log.d( LOG,  "play(): BEFORE in[0]="
-                        + Integer.toHexString( inputBuffer.get( inputBuffer.position()))
-                        + ", in[1]=" + Integer.toHexString( inputBuffer.get( inputBuffer.position()+1)));
-
-                Log.d( LOG,  "play(): BEFORE out_b[0]="
-                    + Integer.toHexString(outputBBuffer.get(0))
-                    + ", out_s[0]=" + Integer.toHexString( outputBuffer.get(0)));
-                */
-
-                int nsamp = decoder.decode( inputBuffer, outputBBuffer );
-
-                /*
-                if (outputBBuffer.limit() != 0)
-                    Log.d( LOG,  "play(): AFTER out_b[0]="
-                        + Integer.toHexString(outputBBuffer.get(0))
-                        + ", out_s[0]=" + Integer.toHexString( outputBuffer.get(0)));
-                */
+                int nsamp = decoder.decode( inputBuffer.getData(), 0, inputBuffer.getSize(), outputBuffer, samplesCapacity );
 
                 profMs += System.currentTimeMillis() - tsStart;
                 profSamples += nsamp;
@@ -188,18 +142,10 @@ public class DirectAACPlayer extends AACPlayer {
 
                 if (stopped) break;
 
-                outputBuffer.position(0);
-                outputBuffer.limit( nsamp > 0 ? nsamp : 0);
-
-                pcmfeed.feed( outputBuffer );
+                pcmfeed.feed( outputBuffer, nsamp );
                 if (stopped) break;
 
                 outputBuffer = buffers[ ++samplespoolindex % 3 ];
-                outputBuffer.clear();
-
-                outputBBuffer = bbuffers[ samplespoolindex % 3 ];
-                outputBBuffer.clear();
-
                 inputBuffer = reader.next();
 
                 Log.d( LOG, "play(): yield, sleeping...");
@@ -222,4 +168,3 @@ public class DirectAACPlayer extends AACPlayer {
     }
 
 }
-

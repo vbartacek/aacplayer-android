@@ -132,11 +132,11 @@ static void* aacd5_prepare_buffer( aacd5 *info, jbyte *jbuffer, jint inOff, jint
 
 
 /*
- * Class:     com_spoledge_aacplayer_OpenCOREDecoder
+ * Class:     com_spoledge_aacplayer_DirectOpenCOREDecoder
  * Method:    nativeStart
  * Signature: (Ljava/nio/ByteBuffer;Lcom/spoledge/aacplayer/Decoder/Info;)I
  */
-jint Java_com_spoledge_aacplayer_OpenCOREDecoder_nativeStart
+jint Java_com_spoledge_aacplayer_DirectOpenCOREDecoder_nativeStart
   (JNIEnv *env, jobject thiz, jobject inBuf, jint inOff, jint inLen, jobject aacInfo)
 {
     jboolean isCopy;
@@ -173,11 +173,11 @@ jint Java_com_spoledge_aacplayer_OpenCOREDecoder_nativeStart
 
 
 /*
- * Class:     com_spoledge_aacplayer_OpenCOREDecoder
+ * Class:     com_spoledge_aacplayer_DirectOpenCOREDecoder
  * Method:    nativeDecode
  * Signature: (ILjava/nio/ByteBuffer;Ljava/nio/ShortBuffer;)I
  */
-jint Java_com_spoledge_aacplayer_OpenCOREDecoder_nativeDecode
+jint Java_com_spoledge_aacplayer_DirectOpenCOREDecoder_nativeDecode
   (JNIEnv *env, jobject thiz, jint jinfo, jobject inBuf, jint inOff, jint inLen, jobject outBuf, jint outLen)
 {
     aacd5 *info;
@@ -267,11 +267,11 @@ jint Java_com_spoledge_aacplayer_OpenCOREDecoder_nativeDecode
 
 
 /*
- * Class:     com_spoledge_aacplayer_OpenCOREDecoder
+ * Class:     com_spoledge_aacplayer_DirectOpenCOREDecoder
  * Method:    nativeStop
  * Signature: (I)V
  */
-void Java_com_spoledge_aacplayer_OpenCOREDecoder_nativeStop
+void Java_com_spoledge_aacplayer_DirectOpenCOREDecoder_nativeStop
   (JNIEnv *env, jobject thiz, jint jinfo)
 {
     aacd5_stop( (aacd5*)jinfo);

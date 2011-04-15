@@ -369,11 +369,11 @@ static void aacd3_try_decode( AACDec3Info *info, FrameInfo *frame, unsigned char
 
 
 /*
- * Class:     com_spoledge_aacplayer_FFMPEGDecoder
+ * Class:     com_spoledge_aacplayer_DirectFFMPEGDecoder
  * Method:    nativeStart
  * Signature: (Ljava/nio/ByteBuffer;Lcom/spoledge/aacplayer/Decoder/Info;)I
  */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_FFMPEGDecoder_nativeStart
+JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_DirectFFMPEGDecoder_nativeStart
   (JNIEnv *env, jobject thiz, jobject inBuf, jint inOff, jint inLen, jobject aacInfo)
 {
     DEBUG2("starting native service - codec '%s'", aac_decoder.name );
@@ -409,11 +409,11 @@ JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_FFMPEGDecoder_nativeStart
 
 
 /*
- * Class:     com_spoledge_aacplayer_FFMPEGDecoder
+ * Class:     com_spoledge_aacplayer_DirectFFMPEGDecoder
  * Method:    nativeDecode
  * Signature: (ILjava/nio/ByteBuffer;Ljava/nio/ShortBuffer;)I
  */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_FFMPEGDecoder_nativeDecode
+JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_DirectFFMPEGDecoder_nativeDecode
   (JNIEnv *env, jobject thiz, jint jinfo, jobject inBuf, jint inOff, jint inLen, jobject outBuf, jint outLen)
 {
     AACDec3Info *info;
@@ -495,11 +495,11 @@ JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_FFMPEGDecoder_nativeDecode
 
 
 /*
- * Class:     com_spoledge_aacplayer_FFMPEGDecoder
+ * Class:     com_spoledge_aacplayer_DirectFFMPEGDecoder
  * Method:    nativeStop
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_com_spoledge_aacplayer_FFMPEGDecoder_nativeStop
+JNIEXPORT void JNICALL Java_com_spoledge_aacplayer_DirectFFMPEGDecoder_nativeStop
   (JNIEnv *env, jobject thiz, jint jinfo)
 {
     aacd3_stop( (AACDec3Info*)jinfo);
