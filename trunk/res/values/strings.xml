@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="app_name">AAC Player</string>
+	<string name="app_name_full">AAC Player v 0.4</string>
 	<string name="button_close">Close</string>
 	<string name="button_faad2">Player I (FAAD2)</string>
 	<string name="button_ffmpeg">Player II (FFmpeg)</string>
