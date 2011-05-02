@@ -165,11 +165,11 @@ There are these options of playing AAC files:
     3) playing using the OpenCORE decoder native library
             + fast on all types of devices - even those not having FPU
             + should work on all 1.5+ platforms
-            - still slow on emulator, but not so much
+            + works on emulator
             - patent license is needed
 
     /* currenlty not shown in the menu:
-    2) playing using an internal AAC decoder (HTC Desire) by splitting the
+    4) playing using an internal AAC decoder (HTC Desire) by splitting the
         stream into small file chunks (having the ".aac" suffix)
             - only some devices support this
             - does not work on emulator

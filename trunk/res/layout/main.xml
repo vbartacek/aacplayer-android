@@ -64,23 +64,6 @@
 				style="@style/button_main"
 			/>
 
-			<RadioGroup
-				android:layout_width="fill_parent"
-				android:layout_height="wrap_content"
-			>
-
-				<RadioButton
-					android:id="@+id/view_main_radio_array"
-					android:text="Array"
-				/>
-
-				<RadioButton
-					android:id="@+id/view_main_radio_direct"
-					android:text="Direct"
-				/>
-
-			</RadioGroup>
-
 			<TextView
 				android:id="@+id/view_main_text_what"
 				android:text="@string/text_revision"

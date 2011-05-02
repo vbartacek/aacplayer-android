@@ -1,6 +1,6 @@
 /*
 ** AACPlayer - Freeware Advanced Audio (AAC) Player for Android
-** Copyright (C) 2010 Spolecne s.r.o., http://www.spoledge.com
+** Copyright (C) 2011 Spolecne s.r.o., http://www.spoledge.com
 **  
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,13 +24,39 @@ import java.io.IOException;
 
 
 /**
- * Callback from playerto GUI.
+ * Callback from player to GUI.
  */
 public interface PlayerCallback {
 
+    /**
+     * This method is called when the player is started.
+     */
     public void playerStarted();
-    public void playerDataRead( int bytes );
+
+
+    /**
+     * This method is called periodically by PCMFeed.
+     *
+     * @param isPlaying false means that the PCM data are being buffered,
+     *          but the audio is not playing yet
+     *
+     * @param samplesBuffered the number of samples buffered and prepared for playing
+     *
+     * @param bufferSize the total size of the buffer (samples - not bytes)
+     */
+    public void playerPCMFeedBuffer( boolean isPlaying, int samplesBuffered, int bufferSize );
+
+
+    /**
+     * This method is called when the player is stopped.
+     * Note: __after__ this method the method playerException might be also called.
+     */
     public void playerStopped();
+
+
+    /**
+     * This method is called when an exception is thrown by player.
+     */
     public void playerException( Throwable t );
 
 }

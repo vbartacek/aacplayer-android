@@ -18,48 +18,119 @@
 **/
 package com.spoledge.aacplayer;
 
-import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
-
 
 /**
  * Parent class for all array decoders.
  */
-public abstract class ArrayDecoder extends Decoder {
+public class ArrayDecoder extends Decoder {
+
+    private static enum State { IDLE, RUNNING };
+
+    private static boolean libLoaded = false;
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Attributes
+    ////////////////////////////////////////////////////////////////////////////
+
+    private int decoder;
+    private int aacdw;
+    private State state = State.IDLE;
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Constructors
+    ////////////////////////////////////////////////////////////////////////////
+
+    private ArrayDecoder( int decoder ) {
+        this.decoder = decoder;
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////
     // Public
     ////////////////////////////////////////////////////////////////////////////
 
-
     /**
-     * Starts decoding stream.
-     */
-    public abstract Info start( byte[] buf, int off, int len );
-
-
-    /**
-     * Decodes AAC stream.
-     * @return the number of samples produced (totally all channels = the length of the filled array)
-     */
-    public abstract int decode( byte[] buf, int off, int len, short[] samples, int outLen );
-
-
-    /**
-     * Stops the decoder and releases all resources.
-     */
-    public abstract void stop();
-
-
-    /**
-     * Loads decoder library.
+     * Returns supported decoders.
      * @return the supported decoders (bit array)
      * @see DECODER_FAAD2
      * @see DECODER_FFMPEG
      * @see DECODER_OPENCORE
      */
     public static int getFeatures() {
+        loadLibrary();
+
         return nativeGetFeatures();
+    }
+
+
+    /**
+     * Creates a new decoder.
+     * @param decoder the decoder to be used
+     * @see DECODER_FAAD2
+     * @see DECODER_FFMPEG
+     * @see DECODER_OPENCORE
+     */
+    public static synchronized ArrayDecoder create( int decoder ) {
+        loadLibrary();
+
+        return new ArrayDecoder( decoder );
+    }
+
+
+    /**
+     * Returns the decoder.
+     * @see DECODER_FAAD2
+     * @see DECODER_FFMPEG
+     * @see DECODER_OPENCORE
+     */
+    public int getDecoder() {
+        return decoder;
+    }
+
+
+    /**
+     * Starts decoding AAC stream.
+     */
+    public Info start( ArrayBufferReader reader ) {
+        if (state != State.IDLE) throw new IllegalStateException();
+
+        info = new Info();
+
+        aacdw = nativeStart( decoder, reader, info );
+
+        if (aacdw == 0) throw new RuntimeException("Cannot start native decoder");
+
+        state = State.RUNNING;
+
+        return info;
+    }
+
+
+    /**
+     * Decodes AAC stream.
+     * @return the number of samples produced (totally all channels = the length of the filled array)
+     */
+    public Info decode( short[] samples, int outLen ) {
+        if (state != State.RUNNING) throw new IllegalStateException();
+
+        nativeDecode( aacdw, samples, outLen );
+
+        return info;
+    }
+
+
+    /**
+     * Stops the decoder and releases all resources.
+     */
+    public void stop() {
+        if (aacdw != 0) {
+            nativeStop( aacdw );
+            aacdw = 0;
+        }
+
+        state = State.IDLE;
     }
 
 
@@ -82,7 +153,22 @@ public abstract class ArrayDecoder extends Decoder {
     // Private
     ////////////////////////////////////////////////////////////////////////////
 
+    private static synchronized void loadLibrary() {
+        if (!libLoaded) {
+            System.loadLibrary( "aacarray" );
+
+            libLoaded = true;
+        }
+    }
+
+
     private static native int nativeGetFeatures();
+
+    private native int nativeStart( int decoder, ArrayBufferReader reader, Info info );
+
+    private native int nativeDecode( int aacdw, short[] samples, int outLen );
+
+    private native void nativeStop( int aacdw );
 }
 
 

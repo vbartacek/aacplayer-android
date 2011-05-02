@@ -28,7 +28,7 @@ import android.util.Log;
 /**
  * This is the parent of both PCM Feeders.
  */
-public abstract class AbstractPCMFeed implements Runnable {
+public abstract class PCMFeed implements Runnable {
 
     private static final String LOG = "PCMFeed";
 
@@ -53,7 +53,7 @@ public abstract class AbstractPCMFeed implements Runnable {
     // Constructors
     ////////////////////////////////////////////////////////////////////////////
 
-    protected AbstractPCMFeed( int sampleRate, int channels) {
+    protected PCMFeed( int sampleRate, int channels) {
         this( sampleRate, channels,
             AudioTrack.getMinBufferSize( sampleRate, channels == 1 ?
                 AudioFormat.CHANNEL_CONFIGURATION_MONO :
@@ -62,7 +62,7 @@ public abstract class AbstractPCMFeed implements Runnable {
     }
 
 
-    protected AbstractPCMFeed( int sampleRate, int channels, int minBufferSizeInBytes ) {
+    protected PCMFeed( int sampleRate, int channels, int minBufferSizeInBytes ) {
         this.sampleRate = sampleRate;
         this.channels = channels;
         this.minBufferSizeInBytes = minBufferSizeInBytes;

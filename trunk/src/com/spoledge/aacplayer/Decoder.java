@@ -27,9 +27,16 @@ public abstract class Decoder {
     /**
      * Info about the stream.
      */
-    public static class Info {
+    public static final class Info {
         private int sampleRate;
         private int channels;
+
+        private int frameMaxBytesConsumed;
+        private int frameSamples;
+
+        private int roundFrames;
+        private int roundBytesConsumed;
+        private int roundSamples;
 
         public int getChannels() {
             return channels;
@@ -38,18 +45,28 @@ public abstract class Decoder {
         public int getSampleRate() {
             return sampleRate;
         }
+
+        public int getFrameMaxBytesConsumed() {
+            return frameMaxBytesConsumed;
+        }
+
+        public int getFrameSamples() {
+            return frameSamples;
+        }
+
+        public int getRoundFrames() {
+            return roundFrames;
+        }
+
+        public int getRoundBytesConsumed() {
+            return roundBytesConsumed;
+        }
+
+        public int getRoundSamples() {
+            return roundSamples;
+        }
+    
     }
-
-
-    /**
-     * Decoder type supported bit: ARRAY.
-     */
-    public static final int DECODER_TYPE_ARRAY = 0x01;
-
-    /**
-     * Decoder type supported bit: DIRECT.
-     */
-    public static final int DECODER_TYPE_DIRECT = 0x02;
 
 
     /**
@@ -72,31 +89,13 @@ public abstract class Decoder {
 
 
     ////////////////////////////////////////////////////////////////////////////
-    // Public
+    // Attributes
     ////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Loads decoder library.
-     * @return the supported decoder types (bit array)
-     * @see DECODER_TYPE_ARRAY
-     * @see DECODER_TYPE_DIRECT
-     * @see DECODER_OPENCORE
+     * The information passed between JNI and Java.
      */
-    public static synchronized int load() {
-        if (!libLoaded) {
-            System.loadLibrary( "AACDecoder" );
+    protected Info info;
 
-            libLoaded = true;
-        }
-
-        return nativeGetFeatures();
-    }
-
-
-    ////////////////////////////////////////////////////////////////////////////
-    // Private
-    ////////////////////////////////////////////////////////////////////////////
-
-    private static native int nativeGetFeatures();
 }
 

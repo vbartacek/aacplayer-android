@@ -36,14 +36,6 @@ extern "C" {
 #undef com_spoledge_aacplayer_Decoder_DECODER_OPENCORE
 #define com_spoledge_aacplayer_Decoder_DECODER_OPENCORE 4L
 
-/*
- * Class:     com_spoledge_aacplayer_Decoder
- * Method:    nativeGetFeatures
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_Decoder_nativeGetFeatures
-  (JNIEnv *, jclass);
-
 #ifdef __cplusplus
 }
 #endif

@@ -36,59 +36,31 @@ public class ArrayAACPlayer extends AACPlayer {
 
     private static final String LOG = "ArrayAACPlayer";
 
+    private ArrayDecoder decoder;
+
 
     ////////////////////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////////////////////
 
-    public ArrayAACPlayer() {
+    public ArrayAACPlayer( ArrayDecoder decoder ) {
+        this( decoder, null );
+    }
+
+
+    public ArrayAACPlayer( ArrayDecoder decoder, PlayerCallback playerCallback ) {
+        super( playerCallback );
+        this.decoder = decoder;
     }
 
 
     ////////////////////////////////////////////////////////////////////////////
-    // Public
+    // Protected
     ////////////////////////////////////////////////////////////////////////////
 
-    public void play( String url, Decoder decoder, PlayerCallback clb ) throws Exception {
-        ArrayDecoder adecoder = (ArrayDecoder) decoder;
-
-        if (url.indexOf( ':' ) > 0) {
-            URLConnection cn = new URL( url ).openConnection();
-            cn.connect();
-
-            dumpHeaders( cn );
-
-            play( cn.getInputStream(), adecoder, clb ); 
-        }
-        else play( new FileInputStream( url ), adecoder, clb );
-    }
-
-
-    ////////////////////////////////////////////////////////////////////////////
-    // Private
-    ////////////////////////////////////////////////////////////////////////////
-
-    private void play( InputStream is, ArrayDecoder decoder, PlayerCallback clb ) throws Exception {
-        if (clb != null) clb.playerStarted();
-
-        //
-        // NOTE: the buffer length must be adjusted to the expected stream bitrate/quality
-        //       The higher bitrate, the higher buffer
-        //       Experimental (this worked for http.yourmuze.com):
-        //           24kbps: ArrayBufferReader( 2048, 1024, is )
-        //           48kbps: ArrayBufferReader( 8192, 4096, is )
-        //           64kbps: ArrayBufferReader( 8192, 4096, is )
-        //          128kbps: ArrayBufferReader( 16384, 8192, is )
-        //
-        ArrayBufferReader reader = new ArrayBufferReader( 2048, 1024, is );
-        //ArrayBufferReader reader = new ArrayBufferReader( 8192, 4096, is );
-        //ArrayBufferReader reader = new ArrayBufferReader( 16384, 8192, is );
-
+    protected void playImpl( InputStream is, int expectedKBitSecRate ) throws Exception {
+        ArrayBufferReader reader = new ArrayBufferReader( computeInputBufferSize( expectedKBitSecRate, roundDurationMs ), is );
         new Thread( reader ).start();
-
-        // try { Thread.sleep(500);} catch (InterruptedException e) {}
-
-        stopped = false;
 
         ArrayPCMFeed pcmfeed = null;
 
@@ -99,11 +71,10 @@ public class ArrayAACPlayer extends AACPlayer {
         int profCount = 0;
 
         try {
-            ArrayBufferReader.Buffer inputBuffer = reader.next();
-            Decoder.Info info = decoder.start( inputBuffer.getData(), 0, inputBuffer.getSize());
+            Decoder.Info info = decoder.start( reader );
 
             Log.d( LOG, "play(): samplerate=" + info.getSampleRate() + ", channels=" + info.getChannels());
-//if (info != null) throw new RuntimeException("Breakpoint");
+
             profSampleRate = info.getSampleRate() * info.getChannels();
 
             if (info.getChannels() > 2) {
@@ -114,7 +85,9 @@ public class ArrayAACPlayer extends AACPlayer {
             //   - one is used by decoder
             //   - one is used by the PCMFeeder
             //   - one is enqueued / passed to PCMFeeder - non-blocking op
-            int samplesCapacity = info.getChannels() * info.getSampleRate() * 2;
+            int samplesCapacity = computeOutputBufferSize( info.getSampleRate(), info.getChannels(), roundDurationMs);
+
+            Log.d( LOG, "run() output capacity (samples)=" + samplesCapacity );
 
             short[][] buffers = new short[3][];
 
@@ -132,7 +105,8 @@ public class ArrayAACPlayer extends AACPlayer {
             do {
                 long tsStart = System.currentTimeMillis();
 
-                int nsamp = decoder.decode( inputBuffer.getData(), 0, inputBuffer.getSize(), outputBuffer, samplesCapacity );
+                info = decoder.decode( outputBuffer, samplesCapacity );
+                int nsamp = info.getRoundSamples();
 
                 profMs += System.currentTimeMillis() - tsStart;
                 profSamples += nsamp;
@@ -140,17 +114,26 @@ public class ArrayAACPlayer extends AACPlayer {
 
                 Log.d( LOG, "play(): decoded " + nsamp + " samples" );
 
+                if (nsamp == 0) stopped = true;
+
                 if (stopped) break;
 
                 pcmfeed.feed( outputBuffer, nsamp );
                 if (stopped) break;
 
+                // we subtract 1 to avoid samples buffer overrun:
+                int kBitSecRate = computeAvgKBitSecRate( info ) - 1;
+                if (Math.abs(expectedKBitSecRate - kBitSecRate) > 1) {
+                    Log.d( LOG, "play(): changing kBitSecRate: " + expectedKBitSecRate + " -> " + kBitSecRate );
+                    reader.setCapacity( computeInputBufferSize( kBitSecRate, roundDurationMs ));
+                    expectedKBitSecRate = kBitSecRate;
+                }
+
                 outputBuffer = buffers[ ++samplespoolindex % 3 ];
-                inputBuffer = reader.next();
 
                 Log.d( LOG, "play(): yield, sleeping...");
                 try { Thread.sleep( 50 ); } catch (InterruptedException e) {}
-            } while (inputBuffer != null && !stopped);
+            } while (!stopped);
         }
         finally {
             stopped = true;
@@ -163,7 +146,7 @@ public class ArrayAACPlayer extends AACPlayer {
                 + ", decoding=" + (1000*profSamples / profMs)
                 + ", audio/decoding= " + (1000*profSamples / profMs - profSampleRate) * 100 / profSampleRate + " %  (the higher, the better; negative means that decoding is slower than needed by audio)");
 
-            if (clb != null) clb.playerStopped();
+            if (playerCallback != null) playerCallback.playerStopped();
         }
     }
 
