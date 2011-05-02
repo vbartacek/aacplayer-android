@@ -26,7 +26,7 @@ import java.nio.ShortBuffer;
 /**
  * This is the PCM Feeder which uses arrays (short[]).
  */
-public class ArrayPCMFeed extends AbstractPCMFeed {
+public class ArrayPCMFeed extends PCMFeed {
 
     private static final String LOG = "ArrayPCMFeed";
 

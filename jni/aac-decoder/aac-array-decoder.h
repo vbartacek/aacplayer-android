@@ -17,38 +17,49 @@
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **/
 
-#include <jni.h>
+/* Header for class com_spoledge_aacplayer_ArrayDecoder */
 
-/* Header for class com_spoledge_aacplayer_DirectOpenCOREDecoder */
+#ifndef _Included_com_spoledge_aacplayer_ArrayDecoder
+#define _Included_com_spoledge_aacplayer_ArrayDecoder
 
-#ifndef _Included_com_spoledge_aacplayer_DirectOpenCOREDecoder
-#define _Included_com_spoledge_aacplayer_DirectOpenCOREDecoder
+#include "aac-decoder.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /*
- * Class:     com_spoledge_aacplayer_DirectOpenCOREDecoder
+ * Class:     com_spoledge_aacplayer_ArrayDecoder
+ * Method:    nativeGetFeatures
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_ArrayDecoder_nativeGetFeatures
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_spoledge_aacplayer_ArrayDecoder
  * Method:    nativeStart
- * Signature: (Ljava/nio/ByteBuffer;Lcom/spoledge/aacplayer/Decoder/Info;)I
+ * Signature: (ILcom/spoledge/aacplayer/ArrayBufferReader;Lcom/spoledge/aacplayer/Decoder/Info;)I
  */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_DirectOpenCOREDecoder_nativeStart
-  (JNIEnv *, jobject, jobject, jint, jint, jobject);
+JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_ArrayDecoder_nativeStart
+  (JNIEnv *, jobject, jint, jobject, jobject);
 
 /*
- * Class:     com_spoledge_aacplayer_DirectOpenCOREDecoder
+ * Class:     com_spoledge_aacplayer_ArrayDecoder
  * Method:    nativeDecode
- * Signature: (ILjava/nio/ByteBuffer;Ljava/nio/ShortBuffer;)I
+ * Signature: (I[SI)I
  */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_DirectOpenCOREDecoder_nativeDecode
-  (JNIEnv *, jobject, jint, jobject, jint, jint, jobject, jint);
+JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_ArrayDecoder_nativeDecode
+  (JNIEnv *, jobject, jint, jshortArray, jint);
 
 /*
- * Class:     com_spoledge_aacplayer_DirectOpenCOREDecoder
+ * Class:     com_spoledge_aacplayer_ArrayDecoder
  * Method:    nativeStop
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_com_spoledge_aacplayer_DirectOpenCOREDecoder_nativeStop
+JNIEXPORT void JNICALL Java_com_spoledge_aacplayer_ArrayDecoder_nativeStop
   (JNIEnv *, jobject, jint);
+
 
 #ifdef __cplusplus
 }

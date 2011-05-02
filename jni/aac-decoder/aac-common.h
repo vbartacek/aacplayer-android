@@ -1,0 +1,121 @@
+/*
+** AACDecoder - Freeware Advanced Audio (AAC) Decoder for Android
+** Copyright (C) 2011 Spolecne s.r.o., http://www.spoledge.com
+**  
+** This program is free software; you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation; either version 2 of the License, or
+** (at your option) any later version.
+** 
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+** 
+** You should have received a copy of the GNU General Public License
+** along with this program; if not, write to the Free Software 
+** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**/
+
+#ifndef AAC_COMMON_H
+#define AAC_COMMON_H
+
+#include <jni.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+/**
+ * Common info struct used for storing info between calls.
+ */
+typedef struct AACDCommonInfo {
+    unsigned long samplerate;
+    unsigned char channels;
+    unsigned long bytesconsumed;
+    unsigned long bytesleft;
+
+    unsigned char *buffer;
+    unsigned long bbsize;
+
+    // decode() function will fill these:
+    unsigned long frame_bytesconsumed;
+    unsigned long frame_samples;
+
+    // max statistics allowing to predict when to finish decoding:
+    unsigned long frame_max_bytesconsumed;
+    unsigned long frame_max_bytesconsumed_exact;
+
+    // filled after each decoding round
+    unsigned long round_frames;
+    unsigned long round_bytesconsumed;
+    unsigned long round_samples;
+
+} AACDCommonInfo;
+
+
+/**
+ * Decoder definition.
+ */
+typedef struct AACDDecoder {
+    /**
+     * Returns the name of the decoder.
+     */
+    const char* (*name)();
+
+    /**
+     * Initializes the decoder.
+     * @return optionally pointer to decoder's internal structure
+     */
+    void* (*init)();
+
+    /**
+     * Start decoding.
+     * Must fill at least sampleRate and number of channels (AACDCommonInfo).
+     * @return either positive = number of bytes consumed; negative means an error code.
+     */
+    long (*start)( AACDCommonInfo*, void*, unsigned char*, unsigned long);
+
+    /**
+     * Decodes one frame.
+     * @return 0=OK, otherwise error.
+     */
+    int (*decode)( AACDCommonInfo*, void*, unsigned char *, unsigned long, jshort*, jint);
+
+    /**
+     * Destroys the decoder - the decoder should free all resources.
+     */
+    void (*destroy)( AACDCommonInfo*, void*);
+} AACDDecoder;
+
+
+/**************************************************************************************************
+ * Functions
+ *************************************************************************************************/
+
+/**
+ * Searches for ADTS 0xfff header.
+ * Returns the offset of ADTS frame.
+ */
+int aacd_probe(unsigned char *buffer, int len);
+
+
+/**
+ * Copies relevant information to Java object.
+ * This is called in the start method.
+ */
+void aacd_start_info2java( JNIEnv *env, AACDCommonInfo *info, jobject jinfo );
+
+
+/**
+ * Copies relevant information to Java object.
+ * This is called in the decode method.
+ */
+void aacd_decode_info2java( JNIEnv *env, AACDCommonInfo *cinfo, jobject jinfo );
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif

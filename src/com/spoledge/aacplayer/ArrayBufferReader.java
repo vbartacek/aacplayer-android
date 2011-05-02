@@ -49,7 +49,6 @@ public class ArrayBufferReader implements Runnable {
     private static String LOG = "ArrayBufferReader";
 
     int capacity;
-    int minSize;
 
     private Buffer[] buffers;
 
@@ -78,29 +77,36 @@ public class ArrayBufferReader implements Runnable {
      * @param capacity the capacity of one buffer in bytes
      *          = total allocated memory
      *
-     * @param minSize the min count of read bytes
-     *          = everytime we call next(), then we get at least minSize bytes of input data
-     *
      * @param is the input stream
      */
-    public ArrayBufferReader( int capacity, int minSize, InputStream is ) {
-        if (capacity < minSize) throw new RuntimeException("Capacity cannot be less than minSize");
-
+    public ArrayBufferReader( int capacity, InputStream is ) {
         this.capacity = capacity;
-        this.minSize = minSize;
         this.is = is;
+
+        Log.d( LOG, "init(): capacity=" + capacity );
 
         buffers = new Buffer[3];
 
         for (int i=0; i < buffers.length; i++) {
             buffers[i] = new Buffer( capacity );
         }
+
+        indexMine = 0;
+        indexBlocked = buffers.length-1;
     }
 
 
     ////////////////////////////////////////////////////////////////////////////
     // Public
     ////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Changes the capacity of the buffer.
+     */
+    public synchronized void setCapacity( int capacity ) {
+        Log.d( LOG, "setCapacity(): " + capacity );
+        this.capacity = capacity;
+    }
 
 
     /**
@@ -109,35 +115,34 @@ public class ArrayBufferReader implements Runnable {
     public void run() {
         Log.d( LOG, "run() started...." );
 
-        indexMine = 0;
-        indexBlocked = buffers.length-1;
-
+        int cap = capacity;
         int total = 0;
-        int min = minSize;
 
         while (!stopped) {
             Buffer buffer = buffers[ indexMine ];
             total = 0;
 
-            while (!stopped && total < min) {
+            if (cap != buffer.data.length) {
+                Log.d( LOG, "run() capacity changed: " + buffer.data.length + " -> " + cap);
+                buffers[ indexMine ] = buffer = null;
+                buffers[ indexMine ] = buffer = new Buffer( cap );
+            }
+
+            while (!stopped && total < cap) {
                 try {
-                    int n = is.read( buffer.data, total, capacity - total );
+                    int n = is.read( buffer.data, total, cap - total );
 
                     if (n == -1) stopped = true;
                     else total += n;
-                    //Log.d( LOG, "run() read " + total + " bytes" );
                 }
                 catch (IOException e) {
                     Log.e( LOG, "Exception when reading: " + e );
                     stopped = true;
                 }
-
-                // When consumer is fast, then read only minimum required bytes.
-                if ((indexBlocked + 1) % buffers.length == indexMine) min = minSize;
             }
 
             buffer.size = total;
-
+Log.d(LOG,"run(): fetched buffer: " + total );
             synchronized (this) {
                 notify();
                 int indexNew = (indexMine + 1) % buffers.length;
@@ -149,7 +154,7 @@ public class ArrayBufferReader implements Runnable {
                 }
 
                 indexMine = indexNew;
-                min = capacity;
+                cap = capacity;
             }
         }
 
@@ -195,6 +200,7 @@ public class ArrayBufferReader implements Runnable {
         indexBlocked = indexNew;
 
         notify();
+Log.d(LOG,"next(): returning buffer: " + buffers[indexBlocked].size );
 
         return buffers[ indexBlocked ]; 
     }

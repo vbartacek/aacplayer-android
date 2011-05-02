@@ -17,10 +17,9 @@
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **/
 
-#include <stdlib.h>
+#include "aac-array-common.h"
 #include <string.h>
 #include <android/log.h>
-#include <cpu-features.h>
 
 #include "libavcodec/avcodec.h"
 #include "libavcodec/aac_parser.h"
@@ -29,67 +28,40 @@
 #include "libavutil/mem.h"
 #include "libavutil/log.h"
 
-#include "aac-ffmpeg-decoder.h"
+#define AACDW "Decoder[FFMPEG]"
 
-#define AACDW "AACDecoder3"
 
-typedef struct _AACDec3Info {
+typedef struct AACDFFmpeg {
     AVCodecContext *avctx;
     AVPacket *avpkt;
-    unsigned long samplerate;
-    unsigned char channels;
-    unsigned long bytesconsumed;
-    unsigned long bytesleft;
-    unsigned char *buffer;
-    unsigned int bbsize;
-} AACDec3Info;
+} AACDFFmpeg;
 
-
-typedef struct _FrameInfo {
-    unsigned long bytesconsumed;
-    int samples;
-    unsigned int error;
-} FrameInfo;
 
 extern AVCodec aac_decoder;
 
-#define DEBUG(x) \
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, x );
 
-#define DEBUG2(x,y) \
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, x, y );
-
-static jclass AACInfo_jclass;
-static jfieldID AACInfo_samplerate_jfieldID;
-static jfieldID AACInfo_channels_jfieldID;
-
-
-static void aacd3_cpufeatures()
+static const char* aacd_ffmpeg_name()
 {
-    uint64_t features = android_getCpuFeatures();
-    int armv7 = features & ANDROID_CPU_ARM_FEATURE_ARMv7 ? 1 : 0;
-    int neon = features & ANDROID_CPU_ARM_FEATURE_NEON ? 1 : 0;
-
-    __android_log_print(ANDROID_LOG_INFO, AACDW, "CPU FEATURES %s %s", armv7 ? "ARMv7" : "-", neon ? "NEON" : "-");
+    return "FFmpeg";
 }
 
 
-static const char *aacd3_log_name(void *ctx)
+static const char *aacd_ffmpeg_logname( void *ctx )
 {
-    return "AACDec";
+    return AACDW;
 }
 
 
 /**
  * Creates a new AVCodecContext.
  */
-static AVCodecContext* aacd3_create_avctx( AVCodec *codec, AACDec3Info *info ) 
+static AVCodecContext* aacd_ffmpeg_create_avctx( AVCodec *codec ) 
 {
     AVCodecContext *avctx = (AVCodecContext*) av_mallocz( sizeof(AVCodecContext));
 
     AVClass *avcls = (AVClass*) av_mallocz( sizeof(AVClass));
     avcls->class_name = "AVCodecContext";
-    avcls->item_name = aacd3_log_name;
+    avcls->item_name = aacd_ffmpeg_logname;
 
     avctx->av_class = avcls;
     avctx->codec = codec;
@@ -97,9 +69,6 @@ static AVCodecContext* aacd3_create_avctx( AVCodec *codec, AACDec3Info *info )
     avctx->codec_type = codec->type;
     avctx->codec_id = codec->id;
     avctx->priv_data = (void*) av_mallocz( codec->priv_data_size );
-
-    avctx->sample_rate = info->samplerate;
-    avctx->channels = info->channels;
     avctx->extradata_size = 0;
 
     return avctx;
@@ -107,19 +76,9 @@ static AVCodecContext* aacd3_create_avctx( AVCodec *codec, AACDec3Info *info )
 
 
 /**
- * Destroys AVCodecContext.
- */
-static void aacd3_destroy_avctx( AVCodecContext *avctx)
-{
-    if (avctx->av_class) av_free( (void*) avctx->av_class );
-    av_free( avctx );
-}
-
-
-/**
  * Creates a new AVPacket.
  */
-static AVPacket* aacd3_create_avpkt()
+static AVPacket* aacd_ffmpeg_create_avpkt()
 {
     AVPacket *avpkt = (AVPacket*) av_mallocz( sizeof(AVPacket));
     avpkt->data = NULL;
@@ -129,381 +88,110 @@ static AVPacket* aacd3_create_avpkt()
 }
 
 
-/**
- * Destroys AVPacket.
- */
-static void aacd3_destroy_avpkt( AVPacket *avpkt)
+static void* aacd_ffmpeg_init()
 {
-    av_free( avpkt );
-}
-
-
-/**
- * Probes the stream and moves the pointer to the start of the next frame.
- */
-static int aacd3_probe(unsigned char *buffer, int len)
-{
-  int i = 0, pos = 0;
-  while (i <= len-4)
-  {
-      if(
-       ((buffer[i] == 0xff) && ((buffer[i+1] & 0xf6) == 0xf0)) ||
-       (buffer[i] == 'A' && buffer[i+1] == 'D' && buffer[i+2] == 'I' && buffer[i+3] == 'F')
-    ) {
-      pos = i;
-      break;
-    }
-    i++;
-  }
-
-  return pos;
-}
-
-
-static void aacd3_parse_header(unsigned char *buffer, unsigned long buffer_size, AACDec3Info *info ) 
-{
-    GetBitContext bits;
-    AACADTSHeaderInfo hdr;
-
-    init_get_bits(&bits, buffer, AAC_ADTS_HEADER_SIZE * 8);
-
-    if (ff_aac_parse_header(&bits, &hdr) < 0) {
-        DEBUG( "ADTS parsing failed." );
-
-        info->samplerate = -1;
-        info->channels = -1;
-
-        return;
-    }
-
-    /*
-    hdr_info->sample_rate = hdr.sample_rate;
-    hdr_info->channels    = ff_mpeg4audio_channels[hdr.chan_config];
-    hdr_info->samples     = hdr.samples;
-    hdr_info->bit_rate    = hdr.bit_rate;
-    */
-
-    info->samplerate = hdr.sample_rate;
-    info->channels = ff_mpeg4audio_channels[hdr.chan_config];
-}
-
-
-/**
- * Starts the decoder.
- */
-static void* aacd3_start(unsigned char *buffer, unsigned long buffer_size)
-{
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "starting native service" );
-
     av_log_set_level( AV_LOG_DEBUG );
 
-    aacd3_cpufeatures();
+    AACDFFmpeg *ff = (AACDFFmpeg*) av_mallocz( sizeof(struct AACDFFmpeg));
 
-    AACDec3Info *info;
-    info = (AACDec3Info*) av_mallocz(sizeof(struct _AACDec3Info));
+    ff->avctx = aacd_ffmpeg_create_avctx( &aac_decoder );
+    ff->avpkt = aacd_ffmpeg_create_avpkt();
 
-    info->avctx = NULL;
-    info->avpkt = NULL;
-    info->buffer = NULL;
-    info->bbsize = 0;
-    info->bytesconsumed = 0;
-    info->bytesleft = 0;
+    av_log( ff->avctx, AV_LOG_INFO, "Test of AV_LOG_INFO\n" );
+    av_log( ff->avctx, AV_LOG_DEBUG, "Test of AV_LOG_DEBUG\n" );
+    av_log( ff->avctx, AV_LOG_VERBOSE, "Test of AV_LOG_VERBOSE\n" );
 
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "start() buffer=%d size=%d", buffer, buffer_size );
-
-    int pos = aacd3_probe( buffer, buffer_size );
-    buffer += pos;
-    buffer_size -= pos;
-    info->bytesconsumed = pos;
-
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "start() pos=%d, b1=%d, b2=%d", pos, buffer[0], buffer[1] );
-
-    aacd3_parse_header( buffer, buffer_size, info );
-
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "start() sample rate=%d", info->samplerate );
-
-    DEBUG( "start(): starting FFMPEG" );
-    //DEBUG ONLY
-    info->channels=2;
-    info->samplerate=44100;
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "start() FORCED sample rate=%d, channels=%d", info->samplerate, info->channels );
-    info->avctx = aacd3_create_avctx( &aac_decoder, info );
-
-    av_log( info->avctx, AV_LOG_INFO, "Test of AV_LOG_INFO\n" );
-    av_log( info->avctx, AV_LOG_DEBUG, "Test of AV_LOG_DEBUG\n" );
-    av_log( info->avctx, AV_LOG_VERBOSE, "Test of AV_LOG_VERBOSE\n" );
-
-    (*aac_decoder.init)( info->avctx );
-    DEBUG( "start() FFMPEG started" );
-
-    info->avpkt = aacd3_create_avpkt();
-
-    return info;
+    return ff;
 }
 
 
-/**
- * Stops the decoder.
- */
-static void aacd3_stop( AACDec3Info *info )
+static void aacd_ffmpeg_destroy( AACDCommonInfo *cinfo, void *ext )
 {
-    if (info == NULL) return;
+    if ( !ext ) return;
 
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "stopping native service" );
+    AACDFFmpeg *ff = (AACDFFmpeg*) ext;
+    AVCodecContext *avctx = ff->avctx;
 
-    if (info->avctx != NULL)
+    if ( avctx )
     {
-        aacd3_destroy_avctx( info->avctx );
-        info->avctx = NULL;
+        if (avctx->codec) avctx->codec->close( avctx );
+        if (avctx->av_class) av_free( (void*) avctx->av_class );
+        av_free( avctx );
     }
 
-    if (info->avpkt != NULL)
-    {
-        aacd3_destroy_avpkt( info->avpkt );
-        info->avpkt = NULL;
-    }
+    if (ff->avpkt) av_free( ff->avpkt );
 
-    if (info->buffer != NULL)
-    {
-        av_free( info->buffer );
-        info->buffer = NULL;
-        info->bbsize = 0;
-    }
-
-    info->bytesleft = 0;
-
-    av_free( info );
+    av_free( ff );
 }
 
 
-/**
- * Copies the rest of the previous input buffer to the beginning of the new array.
- */
-static void* aacd3_prepare_buffer( AACDec3Info *info, jbyte *jbuffer, jint inOff, jint inLen )
+static long aacd_ffmpeg_start( AACDCommonInfo *cinfo, void *ext, unsigned char *buffer, unsigned long buffer_size)
 {
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "prepare_buf() inOff=%d, inLen=%d, info->bytesleft=%d", inOff, inLen, info->bytesleft );
-
-    if (info->buffer != NULL)
-    {
-        if (inOff < info->bytesleft)
-        {
-            __android_log_print(ANDROID_LOG_ERROR, AACDW, "prepare_buf() cannot insert bytes to the buffer: inOff=%d, info->bytesleft=%d", inOff, info->bytesleft );
-
-            info->bytesleft = inLen;
-
-            return jbuffer + inOff;
-        }
-        else 
-        {
-            jbuffer += inOff - info->bytesleft;
-
-            if (info->bytesleft > 0) memcpy( jbuffer, info->buffer, info->bytesleft );
-
-            info->bytesleft += inLen;
-
-            return jbuffer;
-        }
-    }
-    else 
-    {
-        jbuffer += inOff + info->bytesconsumed;
-
-        info->bytesleft = inLen - info->bytesconsumed;
-        info->bytesconsumed = 0;
-
-        int pos = aacd3_probe( jbuffer, info->bytesleft );
-
-        __android_log_print(ANDROID_LOG_DEBUG, AACDW, "prepare_buf() aac sync pos=%d", pos );
-
-        jbuffer += pos;
-        info->bytesleft -= pos;
-
-        return jbuffer;
-    }
-}
-
-
-
-static void aacd3_try_decode( AACDec3Info *info, FrameInfo *frame, unsigned char **buffer,
-                        jshort *jsamples, unsigned long samples_size  )
-{
-    int attempts = 10;
-
-    AVCodecContext *avctx = info->avctx;
-    AVPacket *avpkt = info->avpkt;
+    AACDFFmpeg *ff = (AACDFFmpeg*) ext;
+    AVCodecContext *avctx = ff->avctx;
     AVCodec *codec = avctx->codec;
 
-    do {
-        avpkt->data = *buffer;
-        avpkt->size = info->bytesleft;
-        avpkt->pos = 0;
+    codec->init( avctx );
 
-        frame->samples = 0;
+    // Decode one frame to obtain sample rate and channels
+    AVPacket *avpkt = ff->avpkt;
+    avpkt->data = buffer;
+    avpkt->size = buffer_size;
+    avpkt->pos = 0;
 
-        // aac_decode_frame
-        int consumed = (*codec->decode)( avctx, jsamples, (int*) &samples_size, avpkt );
+    int outSize = 4096 * sizeof(jshort);
+    jshort* tmp = av_mallocz(outSize);
 
-        if (consumed > 0) {
-            frame->error = 0;
-            frame->bytesconsumed = consumed;
-            frame->samples = avctx->frame_size * avctx->channels;
+    int consumed = codec->decode( avctx, tmp, &outSize, avpkt );
+    av_free( tmp );
 
-            return;
-        }
+    if (consumed <= 0) {
+        __android_log_print(ANDROID_LOG_ERROR, AACDW, "start() cannot decode first frame, error: %d", consumed);
 
-        __android_log_print(ANDROID_LOG_ERROR, AACDW, "Decode bytesleft=%d, error: %d",
-                    info->bytesleft, consumed );
-
-        frame->error = consumed;
-        frame->bytesconsumed = 0;
-
-        if (info->bytesleft > 1)
-        {
-            int pos = aacd3_probe( (*buffer)+1, info->bytesleft-1 );
-            (*buffer) += pos+1;
-            info->bytesleft -= pos+1;
-        }
-    } while (attempts-- > 0 && info->bytesleft > 1);
-}
-
-
-
-/*
- * Class:     com_spoledge_aacplayer_DirectFFMPEGDecoder
- * Method:    nativeStart
- * Signature: (Ljava/nio/ByteBuffer;Lcom/spoledge/aacplayer/Decoder/Info;)I
- */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_DirectFFMPEGDecoder_nativeStart
-  (JNIEnv *env, jobject thiz, jobject inBuf, jint inOff, jint inLen, jobject aacInfo)
-{
-    DEBUG2("starting native service - codec '%s'", aac_decoder.name );
-
-    jbyte *jbuffer;
-
-    if (AACInfo_jclass == NULL)
-    {
-        AACInfo_jclass = (jclass) (*env)->GetObjectClass( env, aacInfo );
-        AACInfo_samplerate_jfieldID = (jfieldID) (*env)->GetFieldID( env, AACInfo_jclass, "sampleRate", "I");
-        AACInfo_channels_jfieldID = (jfieldID) (*env)->GetFieldID( env, AACInfo_jclass, "channels", "I");
-    }
-
-    jbuffer = (jbyte*) (*env)->GetDirectBufferAddress( env, inBuf );
-
-    if (jbuffer == NULL)
-    {
-        __android_log_print(ANDROID_LOG_ERROR, AACDW, "cannot acquire direct input buffer" );
-        return 0;
-    }
-
-    unsigned char *buffer;
-    buffer = (unsigned char*) jbuffer + inOff;
-
-    AACDec3Info *info;
-    info = aacd3_start( buffer, inLen );
-
-    (*env)->SetIntField( env, aacInfo, AACInfo_samplerate_jfieldID, (jint) info->samplerate);
-    (*env)->SetIntField( env, aacInfo, AACInfo_channels_jfieldID, (jint) info->channels);
-
-    return (jint) info;
-}
-
-
-/*
- * Class:     com_spoledge_aacplayer_DirectFFMPEGDecoder
- * Method:    nativeDecode
- * Signature: (ILjava/nio/ByteBuffer;Ljava/nio/ShortBuffer;)I
- */
-JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_DirectFFMPEGDecoder_nativeDecode
-  (JNIEnv *env, jobject thiz, jint jinfo, jobject inBuf, jint inOff, jint inLen, jobject outBuf, jint outLen)
-{
-    AACDec3Info *info;
-    info = (AACDec3Info*) jinfo;
-
-    if (info->bytesconsumed >= inLen)
-    {
-        __android_log_print(ANDROID_LOG_INFO, AACDW, "consumed all bytes in start()" );
-        info->bytesconsumed = 0;
-        return 0;
-    }
-
-    jbyte *jbuffer;
-    jbuffer = (jbyte*) (*env)->GetDirectBufferAddress( env, inBuf );
-
-    if (jbuffer == NULL)
-    {
-        __android_log_print(ANDROID_LOG_ERROR, AACDW, "cannot acquire direct input buffer" );
-        return 0;
-    }
-
-    jshort *jsamples;
-    jsamples = (jshort*) (*env)->GetDirectBufferAddress( env, outBuf );
-
-    if (jsamples == NULL)
-    {
-        __android_log_print(ANDROID_LOG_ERROR, AACDW, "cannot acquire direct output buffer" );
         return -1;
     }
 
-    unsigned char *buffer;
-    buffer = (unsigned char*) aacd3_prepare_buffer( info, jbuffer, inOff, inLen );
+    cinfo->samplerate = avctx->sample_rate;
+    cinfo->channels = avctx->channels;
 
-    FrameInfo frame;
-    int totalSamples = 0;
-    jshort *samples = jsamples;
-
-    do
-    {
-        aacd3_try_decode( info, &frame, &buffer, samples, outLen );
-
-        if (frame.error != 0) {
-            __android_log_print(ANDROID_LOG_ERROR, AACDW, "Could not decode frame !!!" );
-            return (jint)-1;
-        }
-
-//        __android_log_print(ANDROID_LOG_INFO, AACDW, "frame decoded bytesconsumed=%d, samples=%d", frame.bytesconsumed, frame.samples );
-
-        info->bytesleft -= frame.bytesconsumed;
-        buffer += frame.bytesconsumed;
-
-        if (frame.samples < 1) __android_log_print(ANDROID_LOG_WARN, AACDW, "Decode no samples produced" );
-
-        samples += frame.samples;
-        outLen -= frame.samples;
-        totalSamples += frame.samples;
-    } 
-    while (info->bytesleft > 0
-              && info->bytesleft > 2*frame.bytesconsumed
-              && frame.samples <= outLen );
+    return consumed;
+}
 
 
-    // remember the rest of the input buffer:
-    if (info->bytesleft > 0)
-    {
-        if (info->bytesleft > info->bbsize)
-        {
-            if (info->buffer != NULL) av_free( info->buffer );
-            info->buffer = NULL;
-            info->buffer = (unsigned char*) av_mallocz( info->bytesleft );
-            info->bbsize = info->bytesleft;
-        }
+static int aacd_ffmpeg_decode( AACDCommonInfo *cinfo, void *ext, unsigned char *buffer, unsigned long buffer_size, jshort *jsamples, jint outLen )
+{
+    AACDFFmpeg *ff = (AACDFFmpeg*) ext;
+    AVCodecContext *avctx = ff->avctx;
+    AVPacket *avpkt = ff->avpkt;
+    AVCodec *codec = avctx->codec;
 
-        memcpy( info->buffer, buffer, info->bytesleft);
+    avpkt->data = buffer;
+    avpkt->size = buffer_size;
+    avpkt->pos = 0;
+
+    // aac_decode_frame
+    int outSize = outLen * 2;
+    int consumed = (*codec->decode)( avctx, jsamples, &outSize, avpkt );
+
+    if (consumed <= 0) {
+        __android_log_print(ANDROID_LOG_ERROR, AACDW, "decode() cannot decode frame bytesleft=%d, error: %d",
+                buffer_size, consumed );
+
+        return -1;
     }
 
-    return (jint) totalSamples;
+    cinfo->frame_bytesconsumed = consumed;
+    cinfo->frame_samples = avctx->frame_size * avctx->channels;
+
+    return 0;
 }
 
 
-/*
- * Class:     com_spoledge_aacplayer_DirectFFMPEGDecoder
- * Method:    nativeStop
- * Signature: (I)V
- */
-JNIEXPORT void JNICALL Java_com_spoledge_aacplayer_DirectFFMPEGDecoder_nativeStop
-  (JNIEnv *env, jobject thiz, jint jinfo)
-{
-    aacd3_stop( (AACDec3Info*)jinfo);
-}
-
-
+AACDDecoder aacd_ffmpeg_decoder = {
+    aacd_ffmpeg_name,
+    aacd_ffmpeg_init,
+    aacd_ffmpeg_start,
+    aacd_ffmpeg_decode,
+    aacd_ffmpeg_destroy
+};
 

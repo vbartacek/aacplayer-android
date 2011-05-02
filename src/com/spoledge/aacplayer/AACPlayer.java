@@ -31,8 +31,11 @@ import java.net.URLConnection;
 /**
  * This is the AACPlayer parent class.
  * It uses Decoder to decode AAC stream into PCM samples.
+ * This class is not thread safe.
  */
 public abstract class AACPlayer {
+
+    public static final int DEFAULT_EXPECTED_KBITSEC_RATE = 64;
 
     private static final String LOG = "AACPlayer";
 
@@ -42,6 +45,12 @@ public abstract class AACPlayer {
     ////////////////////////////////////////////////////////////////////////////
 
     protected boolean stopped;
+    protected PlayerCallback playerCallback;
+
+    protected int roundDurationMs = 750;
+
+    private int sumKBitSecRate = 0;
+    private int countKBitSecRate = 0;
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -52,27 +61,22 @@ public abstract class AACPlayer {
     }
 
 
+    public AACPlayer( PlayerCallback playerCallback ) {
+        setPlayerCallback( playerCallback );
+    }
+
+
     ////////////////////////////////////////////////////////////////////////////
     // Public
     ////////////////////////////////////////////////////////////////////////////
 
-    public void playAsync( final String url, final Decoder decoder, final PlayerCallback clb ) {
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    play( url, decoder, clb );
-                }
-                catch (Exception e) {
-                    Log.e( LOG, "playAsync():", e);
-
-                    if (clb != null) clb.playerException( e );
-                }
-            }
-        }).start();
+    public void setPlayerCallback( PlayerCallback playerCallback ) {
+        this.playerCallback = playerCallback;
     }
 
-
-    public abstract void play( String url, Decoder decoder, PlayerCallback clb ) throws Exception;
+    public PlayerCallback getPlayerCallback() {
+        return playerCallback;
+    }
 
 
     public void stop() {
@@ -80,9 +84,71 @@ public abstract class AACPlayer {
     }
 
 
+    public void playAsync( final String url ) {
+        playAsync( url, -1 );
+    }
+
+
+    public void playAsync( final String url, final int expectedKBitSecRate ) {
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    play( url, expectedKBitSecRate );
+                }
+                catch (Exception e) {
+                    Log.e( LOG, "playAsync():", e);
+
+                    if (playerCallback != null) playerCallback.playerException( e );
+                }
+            }
+        }).start();
+    }
+
+
+    public void play( String url ) throws Exception {
+        play( url, -1 );
+    }
+
+
+    public void play( String url, int expectedKBitSecRate ) throws Exception {
+        if (url.indexOf( ':' ) > 0) {
+            URLConnection cn = new URL( url ).openConnection();
+            cn.connect();
+
+            dumpHeaders( cn );
+
+            // TODO: try to get the expectedKBitSecRate from headers
+            play( cn.getInputStream(), expectedKBitSecRate);
+        }
+        else play( new FileInputStream( url ), expectedKBitSecRate );
+    }
+
+
+    public void play( InputStream is ) throws Exception {
+        play( is, -1 );
+    }
+
+
+    public final void play( InputStream is, int expectedKBitSecRate ) throws Exception {
+        stopped = false;
+
+        if (playerCallback != null) playerCallback.playerStarted();
+
+        if (expectedKBitSecRate <= 0) expectedKBitSecRate = DEFAULT_EXPECTED_KBITSEC_RATE;
+
+        sumKBitSecRate = 0;
+        countKBitSecRate = 0;
+
+        playImpl( is, expectedKBitSecRate );
+    }
+
+
     ////////////////////////////////////////////////////////////////////////////
     // Protected
     ////////////////////////////////////////////////////////////////////////////
+
+    protected abstract void playImpl( InputStream is, int expectedKBitSecRate ) throws Exception;
+
 
     protected void dumpHeaders( URLConnection cn ) {
         for (java.util.Map.Entry<String, java.util.List<String>> me : cn.getHeaderFields().entrySet()) {
@@ -91,5 +157,58 @@ public abstract class AACPlayer {
                 
             }
         }
+    }
+
+
+    protected int computeAvgKBitSecRate( Decoder.Info info ) {
+        // do not change the value after a while - avoid changing of the out buffer:
+        if (countKBitSecRate < 64) {
+            int kBitSecRate = computeKBitSecRate( info );
+            int frames = info.getRoundFrames();
+
+            sumKBitSecRate += kBitSecRate * frames;
+            countKBitSecRate += frames;
+        }
+
+        return sumKBitSecRate / countKBitSecRate;
+    }
+
+
+    protected static int computeKBitSecRate( Decoder.Info info ) {
+        if (info.getRoundSamples() <= 0) return -1;
+
+        return computeKBitSecRate( info.getRoundBytesConsumed(), info.getRoundSamples(),
+                                   info.getSampleRate(), info.getChannels());
+    }
+
+
+    protected static int computeKBitSecRate( int bytesconsumed, int samples, int sampleRate, int channels ) {
+        long ret = 8L * bytesconsumed * channels * sampleRate / samples;
+
+        return (((int)ret) + 500) / 1000;
+    }
+
+
+    protected static int computeInputBufferSize( int kbitSec, int durationMs ) {
+        return kbitSec * durationMs / 8;
+    }
+
+
+    protected static int computeInputBufferSize( Decoder.Info info, int durationMs ) {
+
+        return computeInputBufferSize( info.getRoundBytesConsumed(), info.getRoundSamples(),
+                                        info.getSampleRate(), info.getChannels(), durationMs );
+    }
+
+
+    protected static int computeInputBufferSize( int bytesconsumed, int samples,
+                                                 int sampleRate, int channels, int durationMs ) {
+
+        return (int)(((long) bytesconsumed) * channels * sampleRate * durationMs  / (1000L * samples));
+    }
+
+
+    protected static int computeOutputBufferSize( int sampleRate, int channels, int durationMs ) {
+        return sampleRate * channels * durationMs / 1000;
     }
 }

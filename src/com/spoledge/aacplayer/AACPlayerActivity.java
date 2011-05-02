@@ -50,9 +50,12 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     private TextView txtStatus;
     private Handler uiHandler;
 
+    /**
+     * Decoder features: FAAD | FFmpeg | OpenCORE
+     */
     private int dfeatures;
 
-    private DirectAACPlayer aacPlayer;
+    private AACPlayer aacPlayer;
     private AACFileChunkPlayer aacFileChunkPlayer;
 
 
@@ -72,7 +75,18 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     }
 
 
-    public void playerDataRead( int bytes ) {
+    /**
+     * This method is called periodically by PCMFeed.
+     *
+     * @param isPlaying false means that the PCM data are being buffered,
+     *          but the audio is not playing yet
+     *
+     * @param samplesBuffered the number of samples buffered and prepared for playing
+     *
+     * @param bufferSize the total size of the buffer (samples - not bytes)
+     */
+    public void playerPCMFeedBuffer( boolean isPlaying, int samplesBuffered, int bufferSize ) {
+        
     }
 
 
@@ -120,23 +134,17 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
             switch (v.getId()) {
 
                 case R.id.view_main_button_faad2:
-                    stop();
-                    aacPlayer = new DirectAACPlayer();
-                    aacPlayer.playAsync( getUrl(), DirectFAADDecoder.create(), this );
+                    start( Decoder.DECODER_FAAD2 );
                     txtStatus.setText( R.string.text_using_FAAD2 );
                     break; 
 
                 case R.id.view_main_button_ffmpeg:
-                    stop();
-                    aacPlayer = new DirectAACPlayer();
-                    aacPlayer.playAsync( getUrl(), DirectFFMPEGDecoder.create(), this );
+                    start( Decoder.DECODER_FFMPEG );
                     txtStatus.setText( R.string.text_using_FFmpeg );
                     break; 
 
                 case R.id.view_main_button_opencore:
-                    stop();
-                    aacPlayer = new DirectAACPlayer();
-                    aacPlayer.playAsync( getUrl(), DirectOpenCOREDecoder.create(), this );
+                    start( Decoder.DECODER_OPENCORE );
                     txtStatus.setText( R.string.text_using_OpenCORE );
                     break; 
 
@@ -185,15 +193,9 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
         //b3.setOnClickListener( this );
         btnStop.setOnClickListener( this );
 
-        //int decTypefeatures = Decoder.load();
-        //dfeatures = DirectDecoder.getFeatures();
-        dfeatures = Decoder.load();
+        dfeatures = ArrayDecoder.getFeatures();
 
         enableButtons();
-
-        if ((dfeatures & Decoder.DECODER_FAAD2) != 0) btnFaad2.setEnabled( true );
-        if ((dfeatures & Decoder.DECODER_FFMPEG) != 0) btnFFmpeg.setEnabled( true );
-        if ((dfeatures & Decoder.DECODER_OPENCORE) != 0) btnOpenCORE.setEnabled( true );
 
         history = new History( this );
         history.read();
@@ -224,6 +226,13 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     // Private
     ////////////////////////////////////////////////////////////////////////////
 
+    private void start( int decoder ) {
+        stop();
+        aacPlayer = new ArrayAACPlayer( ArrayDecoder.create( decoder ), this);
+        aacPlayer.playAsync( getUrl());
+    }
+
+
     private void stop() {
         if (aacFileChunkPlayer != null) { aacFileChunkPlayer.stop(); aacFileChunkPlayer = null; }
         if (aacPlayer != null) { aacPlayer.stop(); aacPlayer = null; }
@@ -244,5 +253,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
         if ((dfeatures & Decoder.DECODER_FFMPEG) != 0) btnFFmpeg.setEnabled( true );
         if ((dfeatures & Decoder.DECODER_OPENCORE) != 0) btnOpenCORE.setEnabled( true );
     }
+
+
 }
 
