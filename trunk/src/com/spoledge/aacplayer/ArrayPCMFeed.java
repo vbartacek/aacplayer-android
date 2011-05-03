@@ -1,6 +1,6 @@
 /*
 ** AACPlayer - Freeware Advanced Audio (AAC) Player for Android
-** Copyright (C) 2010 Spolecne s.r.o., http://www.spoledge.com
+** Copyright (C) 2011 Spolecne s.r.o., http://www.spoledge.com
 **  
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -18,31 +18,34 @@
 **/
 package com.spoledge.aacplayer;
 
-import android.util.Log;
-
-import java.nio.ShortBuffer;
-
 
 /**
  * This is the PCM Feeder which uses arrays (short[]).
+ *
+ * <pre>
+ *  // 44100 Hz, stereo, bufferng of 1.5 seconds:
+ *  ArrayPCMFeed pcmfeed = new ArrayPCMFeed( 44100, 2, ArrayPCMFeed.msToBytes( 1500 ));
+ *
+ *  // start the exectuin thread:
+ *  new Thread( pcmfeed ).start();
+ *
+ *  while (...) {
+ *      // obtain the PCM data:
+ *      short[] samples = ...
+ *
+ *      // feed the audio buffer; on error break the loop:
+ *      if (!pcmfeed.feed( samples, samples.length )) break;
+ *  }
+ * </pre>
  */
 public class ArrayPCMFeed extends PCMFeed {
-
-    private static final String LOG = "ArrayPCMFeed";
-
 
     ////////////////////////////////////////////////////////////////////////////
     // Attributes
     ////////////////////////////////////////////////////////////////////////////
 
-    private int sampleRate;
-    private int channels;
-    private int minBufferSizeInBytes;
-
     private short[] samples;
     private int n;
-
-    private boolean stopped;
 
 
     ////////////////////////////////////////////////////////////////////////////
@@ -50,23 +53,25 @@ public class ArrayPCMFeed extends PCMFeed {
     ////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Creates a new threaded PCM feeder which uses arrays.
-     * @param sampleRate the sampling rate
-     * @param channels the number of channels (0 or 1)
+     * Creates a new PCMFeed object.
+     * @param sampleRate the sampling rate in Hz (e.g. 44100)
+     * @param channels the number of channels - only allowed values are 1 (mono) and 2 (stereo).
+     * @param bufferSizeInBytes the size of the audio buffer in bytes
      */
-    public ArrayPCMFeed( int sampleRate, int channels) {
-        super( sampleRate, channels );
+    public ArrayPCMFeed( int sampleRate, int channels, int bufferSizeInBytes ) {
+        this( sampleRate, channels, bufferSizeInBytes, null );
     }
 
 
     /**
-     * Creates a new threaded PCM feeder which uses arrays.
-     * @param sampleRate the sampling rate
-     * @param channels the number of channels (0 or 1)
-     * @param minBufferSizeInBytes the size of buffer used by AudioTrack object
+     * Creates a new PCMFeed object.
+     * @param sampleRate the sampling rate in Hz (e.g. 44100)
+     * @param channels the number of channels - only allowed values are 1 (mono) and 2 (stereo).
+     * @param bufferSizeInBytes the size of the audio buffer in bytes
+     * @param playerCallback the callback - may be null
      */
-    public ArrayPCMFeed( int sampleRate, int channels, int minBufferSizeInBytes ) {
-        super( sampleRate, channels, minBufferSizeInBytes );
+    public ArrayPCMFeed( int sampleRate, int channels, int bufferSizeInBytes, PlayerCallback playerCallback ) {
+        super( sampleRate, channels, bufferSizeInBytes, playerCallback );
     }
 
 
@@ -76,8 +81,12 @@ public class ArrayPCMFeed extends PCMFeed {
 
     /**
      * This is called by main thread when a new data are available.
+     *
+     * @param samples the array containing the PCM data
+     * @param n the length of the PCM data
+     * @return true if ok, false if the execution thread is not responding
      */
-    public synchronized void feed( short[] samples, int n ) {
+    public synchronized boolean feed( short[] samples, int n ) {
         while (this.samples != null && !stopped) {
             try { wait(); } catch (InterruptedException e) {}
         }
@@ -86,6 +95,8 @@ public class ArrayPCMFeed extends PCMFeed {
         this.n = n;
 
         notify();
+
+        return !stopped;
     }
 
 

@@ -1,6 +1,6 @@
 /*
 ** AACDecoder - Freeware Advanced Audio (AAC) Decoder for Android
-** Copyright (C) 2010 Spolecne s.r.o., http://www.spoledge.com
+** Copyright (C) 2011 Spolecne s.r.o., http://www.spoledge.com
 **  
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,9 +17,10 @@
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **/
 
+#define AACD_MODULE "Decoder[FFMPEG]"
+
 #include "aac-array-common.h"
 #include <string.h>
-#include <android/log.h>
 
 #include "libavcodec/avcodec.h"
 #include "libavcodec/aac_parser.h"
@@ -27,8 +28,6 @@
 #include "libavcodec/mpeg4audio.h"
 #include "libavutil/mem.h"
 #include "libavutil/log.h"
-
-#define AACDW "Decoder[FFMPEG]"
 
 
 typedef struct AACDFFmpeg {
@@ -48,7 +47,7 @@ static const char* aacd_ffmpeg_name()
 
 static const char *aacd_ffmpeg_logname( void *ctx )
 {
-    return AACDW;
+    return AACD_MODULE;
 }
 
 
@@ -146,7 +145,7 @@ static long aacd_ffmpeg_start( AACDCommonInfo *cinfo, void *ext, unsigned char *
     av_free( tmp );
 
     if (consumed <= 0) {
-        __android_log_print(ANDROID_LOG_ERROR, AACDW, "start() cannot decode first frame, error: %d", consumed);
+        AACD_ERROR("start() cannot decode first frame, error: %d", consumed );
 
         return -1;
     }
@@ -174,8 +173,7 @@ static int aacd_ffmpeg_decode( AACDCommonInfo *cinfo, void *ext, unsigned char *
     int consumed = (*codec->decode)( avctx, jsamples, &outSize, avpkt );
 
     if (consumed <= 0) {
-        __android_log_print(ANDROID_LOG_ERROR, AACDW, "decode() cannot decode frame bytesleft=%d, error: %d",
-                buffer_size, consumed );
+        AACD_ERROR( "decode() cannot decode frame bytesleft=%d, error: %d", buffer_size, consumed );
 
         return -1;
     }

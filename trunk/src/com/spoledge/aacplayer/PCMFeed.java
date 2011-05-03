@@ -26,9 +26,9 @@ import android.util.Log;
 
 
 /**
- * This is the parent of both PCM Feeders.
+ * This is the parent of PCM Feeders.
  */
-public abstract class PCMFeed implements Runnable {
+public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPositionUpdateListener {
 
     private static final String LOG = "PCMFeed";
 
@@ -39,7 +39,13 @@ public abstract class PCMFeed implements Runnable {
 
     protected int sampleRate;
     protected int channels;
-    protected int minBufferSizeInBytes;
+    protected int bufferSizeInMs;
+    protected int bufferSizeInBytes;
+
+    /**
+     * The callback - may be null.
+     */
+    protected PlayerCallback playerCallback;
 
     protected boolean stopped;
 
@@ -48,24 +54,29 @@ public abstract class PCMFeed implements Runnable {
      */
     protected short[] lsamples;
 
+    /**
+     * Total samples written to AudioTrack.
+     */
+    protected int writtenTotal = 0;
+
 
     ////////////////////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////////////////////
 
-    protected PCMFeed( int sampleRate, int channels) {
-        this( sampleRate, channels,
-            AudioTrack.getMinBufferSize( sampleRate, channels == 1 ?
-                AudioFormat.CHANNEL_CONFIGURATION_MONO :
-                AudioFormat.CHANNEL_CONFIGURATION_STEREO,
-                AudioFormat.ENCODING_PCM_16BIT ) * 32 );
-    }
-
-
-    protected PCMFeed( int sampleRate, int channels, int minBufferSizeInBytes ) {
+    /**
+     * Creates a new PCMFeed object.
+     * @param sampleRate the sampling rate in Hz (e.g. 44100)
+     * @param channels the number of channels - only allowed values are 1 (mono) and 2 (stereo).
+     * @param bufferSizeInBytes the size of the audio buffer in bytes
+     * @param playerCallback the callback - may be null
+     */
+    protected PCMFeed( int sampleRate, int channels, int bufferSizeInBytes, PlayerCallback playerCallback ) {
         this.sampleRate = sampleRate;
         this.channels = channels;
-        this.minBufferSizeInBytes = minBufferSizeInBytes;
+        this.bufferSizeInBytes = bufferSizeInBytes;
+        this.bufferSizeInMs = bytesToMs( bufferSizeInBytes, sampleRate, channels );
+        this.playerCallback = playerCallback;
     }
 
 
@@ -73,9 +84,124 @@ public abstract class PCMFeed implements Runnable {
     // Public
     ////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * Returns the sampling rate.
+     */
+    public final int getSampleRate() {
+        return sampleRate;
+    }
 
+
+    /**
+     * Returns the number of channels.
+     */
+    public final int getChannels() {
+        return channels;
+    }
+
+
+    /**
+     * Returns the buffer size in bytes.
+     */
+    public final int getBufferSizeInBytes() {
+        return bufferSizeInBytes;
+    }
+
+
+    /**
+     * Returns the buffer size in milliseconds.
+     */
+    public final int getBufferSizeInMs() {
+        return bufferSizeInMs;
+    }
+
+
+    /**
+     * Stops the PCM feeder.
+     * This method just asynchronously notifies the execution thread.
+     * This can be called in any state.
+     */
+    public synchronized void stop() {
+        stopped = true;
+        notify();
+    }
+
+
+    /**
+     * Converts milliseconds to bytes of buffer.
+     * @param ms the time in milliseconds
+     * @return the size of the buffer in bytes
+     */
+    public static int msToBytes( int ms, int sampleRate, int channels ) {
+        return (int)(((long) ms) * sampleRate * channels / 500);
+    }
+
+
+    /**
+     * Converts milliseconds to samples of buffer.
+     * @param ms the time in milliseconds
+     * @return the size of the buffer in samples
+     */
+    public static int msToSamples( int ms, int sampleRate, int channels ) {
+        return (int)(((long) ms) * sampleRate * channels / 1000);
+    }
+
+
+    /**
+     * Converts bytes of buffer to milliseconds.
+     * @param bytes the size of the buffer in bytes
+     * @return the time in milliseconds
+     */
+    public static int bytesToMs( int bytes, int sampleRate, int channels ) {
+        return (int)(500L * bytes / (sampleRate * channels));
+    }
+
+
+    /**
+     * Converts samples of buffer to milliseconds.
+     * @param samples the size of the buffer in samples (all channels)
+     * @return the time in milliseconds
+     */
+    public static int samplesToMs( int samples, int sampleRate, int channels ) {
+        return (int)(1000L * samples / (sampleRate * channels));
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // OnPlaybackPositionUpdateListener
+    ////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Called on the listener to notify it that the previously set marker
+     * has been reached by the playback head.
+     */
+    public void onMarkerReached( AudioTrack track ) {
+    }
+
+
+    /**
+     * Called on the listener to periodically notify it that the playback head
+     * has reached a multiple of the notification period. 
+     */
+    public void onPeriodicNotification( AudioTrack track ) {
+        int buffered = writtenTotal - track.getPlaybackHeadPosition()*channels;
+        Log.d( LOG, "onPeriodicNotification(): buffered "
+            + samplesToMs( buffered, sampleRate, channels ) + " ms");
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Runnable
+    ////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * The main execution loop which should be executed in its own thread.
+     */
     public void run() {
-        Log.d( LOG, "run(): sampleRate=" + sampleRate + ", channels=" + channels + ", minBufferSizeInBytes=" + minBufferSizeInBytes);
+        Log.d( LOG, "run(): sampleRate=" + sampleRate + ", channels=" + channels
+            + ", bufferSizeInBytes=" + bufferSizeInBytes
+            + " (" + bufferSizeInMs + " ms)");
+
         AudioTrack atrack = new AudioTrack(
                                 AudioManager.STREAM_MUSIC,
                                 sampleRate,
@@ -83,13 +209,13 @@ public abstract class PCMFeed implements Runnable {
                                     AudioFormat.CHANNEL_CONFIGURATION_MONO :
                                     AudioFormat.CHANNEL_CONFIGURATION_STEREO,
                                 AudioFormat.ENCODING_PCM_16BIT,
-                                minBufferSizeInBytes,
+                                bufferSizeInBytes,
                                 AudioTrack.MODE_STREAM );
 
-        boolean first = true;
+        atrack.setPlaybackPositionUpdateListener( this );
+        atrack.setPositionNotificationPeriod( msToSamples( 200, sampleRate, channels ));
 
-        // total samples written to AudioTrack
-        int writtenTotal = 0;
+        boolean first = true;
 
         while (!stopped) {
             // fetch the samples into our "local" variable lsamples:
@@ -120,10 +246,10 @@ public abstract class PCMFeed implements Runnable {
                 writtenTotal += written;
                 int buffered = writtenTotal - atrack.getPlaybackHeadPosition()*channels;
 
-                Log.d( LOG, "PCM fed by " + ln + " and written " + written + " samples - buffered " + buffered);
+                // Log.d( LOG, "PCM fed by " + ln + " and written " + written + " samples - buffered " + buffered);
 
                 if (first) {
-                    if (buffered*2 >= minBufferSizeInBytes) {
+                    if (buffered*2 >= bufferSizeInBytes) {
                         Log.d( LOG, "start of AudioTrack - buffered " + buffered + " samples");
                         atrack.play();
                         first = false;
@@ -146,11 +272,6 @@ public abstract class PCMFeed implements Runnable {
         Log.d( LOG, "run() stopped." );
     }
 
-
-    public synchronized void stop() {
-        stopped = true;
-        notify();
-    }
 
 
     ////////////////////////////////////////////////////////////////////////////

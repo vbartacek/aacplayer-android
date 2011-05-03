@@ -17,15 +17,14 @@
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **/
 
+#define AACD_MODULE "Decoder[OpenCORE]"
+
 #include "aac-array-common.h"
 
 #include "pvmp4audiodecoder_api.h"
 #include "e_tmp4audioobjecttype.h"
 
 #include <string.h>
-#include <android/log.h>
-
-#define AACDW "Decoder[OpenCORE]"
 
 typedef struct AACDOpenCore {
     tPVMP4AudioDecoderExternal *pExt;
@@ -59,7 +58,7 @@ static void* aacd_opencore_init()
 
     if (err)
     {
-        __android_log_print(ANDROID_LOG_ERROR, AACDW, "PVMP4AudioDecoderInitLibrary failed err=%d", err );
+        AACD_ERROR( "PVMP4AudioDecoderInitLibrary failed err=%d", err );
 
         free( pExt );
         free( oc->pMem );
@@ -87,7 +86,7 @@ static void aacd_opencore_destroy( AACDCommonInfo *cinfo, void *ext )
 
 static long aacd_opencore_start( AACDCommonInfo *cinfo, void *ext, unsigned char *buffer, unsigned long buffer_size)
 {
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "start() buffer=%x size=%d", (*(unsigned long*)buffer), buffer_size );
+    AACD_TRACE( "start() buffer=%x size=%d", (*(unsigned long*)buffer), buffer_size );
 
     AACDOpenCore *oc = (AACDOpenCore*) ext;
     tPVMP4AudioDecoderExternal *pExt = oc->pExt;
@@ -110,17 +109,17 @@ static long aacd_opencore_start( AACDCommonInfo *cinfo, void *ext, unsigned char
         pExt->inputBufferUsedLength     = 0;
 
         status = PVMP4AudioDecoderConfig(pExt, oc->pMem);
-        __android_log_print(ANDROID_LOG_DEBUG, AACDW, "start() Status[0]: %d", status );
+        AACD_DEBUG( "start() Status[0]: %d", status );
 
         if (status != MP4AUDEC_SUCCESS) {
             status = PVMP4AudioDecodeFrame(pExt, oc->pMem);
-            __android_log_print(ANDROID_LOG_DEBUG, AACDW, "start() Status[1]: %d", status );
+            AACD_DEBUG( "start() Status[1]: %d", status );
 
             buffer -= pExt->inputBufferUsedLength;
             buffer_size -= pExt->inputBufferUsedLength;
 
             if (MP4AUDEC_SUCCESS == status) {
-                __android_log_print(ANDROID_LOG_DEBUG, AACDW, "start() frameLength: %d\n", pExt->frameLength);
+                AACD_DEBUG( "start() frameLength: %d\n", pExt->frameLength);
                 frameDecoded = 1;
                 continue;
             }
@@ -135,11 +134,11 @@ static long aacd_opencore_start( AACDCommonInfo *cinfo, void *ext, unsigned char
 
     if (status != MP4AUDEC_SUCCESS)
     {
-        __android_log_print(ANDROID_LOG_ERROR, AACDW, "start() init failed status=%d", status );
+        AACD_ERROR( "start() init failed status=%d", status );
         return -1;
     }
 
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "start() bytesconsumed=%d", pExt->inputBufferUsedLength );
+    AACD_DEBUG( "start() bytesconsumed=%d", pExt->inputBufferUsedLength );
 
     int streamType  = -1;
 
@@ -157,11 +156,11 @@ static long aacd_opencore_start( AACDCommonInfo *cinfo, void *ext, unsigned char
         streamType = ENH_AACPLUS;
     }
 
-    __android_log_print(ANDROID_LOG_INFO, AACDW, "start() streamType=%d", streamType );
+    AACD_DEBUG( "start() streamType=%d", streamType );
 
     if ((AAC == streamType) && (2 == pExt->aacPlusUpsamplingFactor))
     {
-        __android_log_print(ANDROID_LOG_INFO, AACDW, "start() DisableAacPlus" );
+        AACD_INFO( "start() DisableAacPlus" );
         PVMP4AudioDecoderDisableAacPlus(pExt, oc->pMem);
     }
 
@@ -193,7 +192,7 @@ static int aacd_opencore_decode( AACDCommonInfo *cinfo, void *ext, unsigned char
 
     if (status != MP4AUDEC_SUCCESS && status != SUCCESS)
     {
-        __android_log_print(ANDROID_LOG_ERROR, AACDW, "decode() bytesleft=%d, status=%d", buffer_size, status );
+        AACD_ERROR( "decode() bytesleft=%d, status=%d", buffer_size, status );
         return -1;
     }
 

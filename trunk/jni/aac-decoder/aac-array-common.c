@@ -17,12 +17,12 @@
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **/
 
+#define AACD_MODULE "ArrayDecoder[Common]"
+
 #include "aac-array-common.h"
 
 #include <string.h>
 #include <android/log.h>
-
-#define AACDW "ArrayDecoder[Common]"
 
 struct JavaArrayBufferReader {
     jclass bufferClazz;
@@ -41,7 +41,7 @@ static struct JavaArrayBufferReader javaABR;
 
 AACDArrayInfo* aacda_start( JNIEnv *env, AACDDecoder *decoder, jobject jreader, jobject aacInfo)
 {
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "start() starting native service - %s", decoder->name());
+    AACD_INFO( "start() starting native decoder - %s", decoder->name());
 
     AACDArrayInfo *ainfo = (AACDArrayInfo*) calloc( 1, sizeof( struct AACDArrayInfo ));
 
@@ -58,7 +58,7 @@ AACDArrayInfo* aacda_start( JNIEnv *env, AACDDecoder *decoder, jobject jreader, 
 
 void aacda_stop( AACDArrayInfo *ainfo )
 {
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "stop() stopping native service" );
+    AACD_INFO( "stop() stopping native decoder" );
 
     if (ainfo == NULL) return;
 
@@ -116,8 +116,6 @@ unsigned char* aacda_prepare_buffer( AACDArrayInfo *ainfo, jbyteArray inBuf, jin
     JNIEnv *env = ainfo->env;
     (*env)->GetByteArrayRegion( env, inBuf, inOff, inLen, ainfo->buffer_block2 + cinfo->bytesleft );
 
-    // memcpy( ainfo->buffer_block2 + cinfo->bytesleft, jbuffer + inOff, inLen );
-
     cinfo->buffer = ainfo->buffer_block;
     ainfo->buffer_block = ainfo->buffer_block2;
     ainfo->buffer_block2 = cinfo->buffer;
@@ -174,27 +172,30 @@ jshort* aacda_prepare_samples( AACDArrayInfo *ainfo, jint outLen )
 
 void aacda_decode( AACDArrayInfo *ainfo, jshort *samples, jint outLen )
 {
+    AACD_DEBUG( "decode() start" );
+
     AACDCommonInfo *cinfo = &ainfo->cinfo;
 
     cinfo->round_frames = 0;
     cinfo->round_bytesconsumed = 0;
     cinfo->round_samples = 0;
 
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "decode() start");
-
     do
     {
         // check if input buffer is filled:
         if (cinfo->bytesleft <= cinfo->frame_max_bytesconsumed)
         {
+            AACD_TRACE( "decode() reading input buffer" );
             aacda_read_buffer( ainfo );
 
             if (cinfo->bytesleft <= cinfo->frame_max_bytesconsumed)
             {
-                __android_log_print(ANDROID_LOG_DEBUG, AACDW, "decode() detected eof");
+                AACD_INFO( "decode() detected end-of-file" );
                 break;
             }
         }
+
+        AACD_TRACE( "decode() frame - frames=%d, consumed=%d, samples=%d, bytesleft=%d, frame_maxconsumed=%d, frame_samples=%d, outLen=%d", cinfo->round_frames, cinfo->round_bytesconsumed, cinfo->round_samples, cinfo->bytesleft, cinfo->frame_max_bytesconsumed, cinfo->frame_samples, outLen);
 
         int attempts = 10;
 
@@ -202,7 +203,8 @@ void aacda_decode( AACDArrayInfo *ainfo, jshort *samples, jint outLen )
         {
             if (!ainfo->decoder->decode( cinfo, ainfo->ext, cinfo->buffer, cinfo->bytesleft, samples, outLen )) break;
 
-            __android_log_print(ANDROID_LOG_INFO, AACDW, "decode() frame - frames=%d, consumed=%d, samples=%d, bytesleft=%d, frame_maxconsumed=%d, frame_samples=%d, outLen=%d", cinfo->round_frames, cinfo->round_bytesconsumed, cinfo->round_samples, cinfo->bytesleft, cinfo->frame_max_bytesconsumed, cinfo->frame_samples, outLen);
+            AACD_WARN( "decode() failed to decode a frame" );
+            AACD_DEBUG( "decode() failed to decode a frame - frames=%d, consumed=%d, samples=%d, bytesleft=%d, frame_maxconsumed=%d, frame_samples=%d, outLen=%d", cinfo->round_frames, cinfo->round_bytesconsumed, cinfo->round_samples, cinfo->bytesleft, cinfo->frame_max_bytesconsumed, cinfo->frame_samples, outLen);
 
             if (cinfo->bytesleft <= cinfo->frame_max_bytesconsumed)
             {
@@ -210,7 +212,7 @@ void aacda_decode( AACDArrayInfo *ainfo, jshort *samples, jint outLen )
 
                 if (cinfo->bytesleft <= cinfo->frame_max_bytesconsumed)
                 {
-                    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "decode() no more input - eof");
+                    AACD_INFO( "decode() detected end-of-file after partial frame error" );
                     attempts = 0;
                     break;
                 }
@@ -224,7 +226,7 @@ void aacda_decode( AACDArrayInfo *ainfo, jshort *samples, jint outLen )
 
         if ( !attempts )
         {
-            __android_log_print(ANDROID_LOG_WARN, AACDW, "decode() failed");
+            AACD_WARN( "decode() failed after several attempts");
             break;
         }
 
@@ -245,6 +247,6 @@ void aacda_decode( AACDArrayInfo *ainfo, jshort *samples, jint outLen )
     } 
     while (outLen >= cinfo->frame_samples );
 
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "decode() round - frames=%d, consumed=%d, samples=%d, bytesleft=%d, frame_maxconsumed=%d, frame_samples=%d, outLen=%d", cinfo->round_frames, cinfo->round_bytesconsumed, cinfo->round_samples, cinfo->bytesleft, cinfo->frame_max_bytesconsumed, cinfo->frame_samples, outLen);
+    AACD_DEBUG( "decode() round - frames=%d, consumed=%d, samples=%d, bytesleft=%d, frame_maxconsumed=%d, frame_samples=%d, outLen=%d", cinfo->round_frames, cinfo->round_bytesconsumed, cinfo->round_samples, cinfo->bytesleft, cinfo->frame_max_bytesconsumed, cinfo->frame_samples, outLen);
 }
 

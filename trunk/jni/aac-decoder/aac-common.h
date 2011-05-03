@@ -21,6 +21,49 @@
 #define AAC_COMMON_H
 
 #include <jni.h>
+#include <android/log.h>
+
+#ifndef AACD_MODULE
+#error "Please specify AACD_MODULE at the top of your file."
+#endif
+
+
+#ifdef AACD_LOGLEVEL_TRACE
+#define AACD_TRACE(...) \
+    __android_log_print(ANDROID_LOG_VERBOSE, AACD_MODULE, __VA_ARGS__)
+#else
+#define AACD_TRACE(...) //
+#endif
+
+#ifdef AACD_LOGLEVEL_DEBUG
+#define AACD_DEBUG(...) \
+    __android_log_print(ANDROID_LOG_DEBUG, AACD_MODULE, __VA_ARGS__)
+#else
+#define AACD_DEBUG(...) //
+#endif
+
+#ifdef AACD_LOGLEVEL_INFO
+#define AACD_INFO(...) \
+    __android_log_print(ANDROID_LOG_INFO, AACD_MODULE, __VA_ARGS__)
+#else
+#define AACD_INFO(...) //
+#endif
+
+#ifdef AACD_LOGLEVEL_WARN
+#define AACD_WARN(...) \
+    __android_log_print(ANDROID_LOG_WARN, AACD_MODULE, __VA_ARGS__)
+#else
+#define AACD_WARN(...) //
+#endif
+
+#ifdef AACD_LOGLEVEL_ERROR
+#define AACD_ERROR(...) \
+    __android_log_print(ANDROID_LOG_ERROR, AACD_MODULE, __VA_ARGS__)
+#else
+#error "Ha AACD_LOGLEVEL_ERROR is not defined"
+#define AACD_ERROR(...) //
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {

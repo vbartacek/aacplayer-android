@@ -23,6 +23,12 @@
 		Please add it to your '.ant.properties' file.
 	</fail>
 
+	<fail unless="jni.loglevel">
+		Missing property.
+		The property 'jni.loglevel' is not set. It should contain the target loglevel.
+		Please add it to your '.ant.properties' file.
+	</fail>
+
 	<!-- The build.properties file can be created by you and is never touched
 		 by the 'android' tool. This is the place to change some of the default property values
 		 used by the Ant rules.

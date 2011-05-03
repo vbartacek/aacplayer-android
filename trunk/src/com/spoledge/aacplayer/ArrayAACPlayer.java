@@ -99,7 +99,13 @@ public class ArrayAACPlayer extends AACPlayer {
 
             int samplespoolindex = 0;
 
-            pcmfeed = new ArrayPCMFeed( info.getSampleRate(), info.getChannels());
+            // Initialize the audio buffer as 2 * roundDurationMs:
+            int bufferSizeInBytes = PCMFeed.msToBytes( 2*roundDurationMs,
+                                                        info.getSampleRate(), info.getChannels());
+
+            pcmfeed = new ArrayPCMFeed( info.getSampleRate(), info.getChannels(),
+                                        bufferSizeInBytes, playerCallback );
+
             new Thread(pcmfeed).start();
 
             do {
@@ -114,15 +120,10 @@ public class ArrayAACPlayer extends AACPlayer {
 
                 Log.d( LOG, "play(): decoded " + nsamp + " samples" );
 
-                if (nsamp == 0) stopped = true;
+                if (nsamp == 0 || stopped) break;
+                if (!pcmfeed.feed( outputBuffer, nsamp ) || stopped) break;
 
-                if (stopped) break;
-
-                pcmfeed.feed( outputBuffer, nsamp );
-                if (stopped) break;
-
-                // we subtract 1 to avoid samples buffer overrun:
-                int kBitSecRate = computeAvgKBitSecRate( info ) - 1;
+                int kBitSecRate = computeAvgKBitSecRate( info );
                 if (Math.abs(expectedKBitSecRate - kBitSecRate) > 1) {
                     Log.d( LOG, "play(): changing kBitSecRate: " + expectedKBitSecRate + " -> " + kBitSecRate );
                     reader.setCapacity( computeInputBufferSize( kBitSecRate, roundDurationMs ));
@@ -131,8 +132,10 @@ public class ArrayAACPlayer extends AACPlayer {
 
                 outputBuffer = buffers[ ++samplespoolindex % 3 ];
 
+                /*
                 Log.d( LOG, "play(): yield, sleeping...");
                 try { Thread.sleep( 50 ); } catch (InterruptedException e) {}
+                */
             } while (!stopped);
         }
         finally {
@@ -140,6 +143,7 @@ public class ArrayAACPlayer extends AACPlayer {
 
             if (pcmfeed != null) pcmfeed.stop();
             decoder.stop();
+            reader.stop();
 
             if (profCount > 0) Log.i( LOG, "play(): average decoding time: " + profMs / profCount + " ms");
             if (profMs > 0) Log.i( LOG, "play(): average rate (samples/sec): audio=" + profSampleRate

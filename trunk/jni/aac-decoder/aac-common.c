@@ -17,12 +17,11 @@
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **/
 
+#define AACD_MODULE "CommonDecoder"
+
 #include "aac-common.h"
 
 #include <string.h>
-#include <android/log.h>
-
-#define AACDW "CommonDecoder"
 
 struct JavaDecoderInfo {
     jclass clazz;
@@ -43,6 +42,8 @@ int aacd_probe(unsigned char *buffer, int len)
     int pos = 0;
     len -= 3;
 
+    AACD_TRACE( "probe() start len=%d", len );
+
     while (pos < len)
     {
         if (*buffer != 0xff)
@@ -50,11 +51,15 @@ int aacd_probe(unsigned char *buffer, int len)
             buffer++;
             pos++;
         }
-        else if ((*(++buffer) & 0xf6) == 0xf0) return pos;
+        else if ((*(++buffer) & 0xf6) == 0xf0)
+        {
+            AACD_TRACE( "probe() found ADTS start at offset %d", pos );
+            return pos;
+        }
         else pos++;
     }
 
-    __android_log_print(ANDROID_LOG_WARN, AACDW, "probe() could not find ADTS start");
+    AACD_WARN( "probe() could not find ADTS start" );
 
     return 0;
 }
@@ -64,6 +69,7 @@ void aacd_start_info2java( JNIEnv *env, AACDCommonInfo *cinfo, jobject jinfo )
 {
     if (javaDecoderInfo.clazz == NULL)
     {
+        AACD_TRACE( "aacd_start_info2java() - caching Java reflection" );
         javaDecoderInfo.clazz = (jclass) (*env)->GetObjectClass( env, jinfo );
         javaDecoderInfo.sampleRate = (jfieldID) (*env)->GetFieldID( env, javaDecoderInfo.clazz, "sampleRate", "I");
         javaDecoderInfo.channels = (jfieldID) (*env)->GetFieldID( env, javaDecoderInfo.clazz, "channels", "I");
@@ -74,18 +80,29 @@ void aacd_start_info2java( JNIEnv *env, AACDCommonInfo *cinfo, jobject jinfo )
         javaDecoderInfo.roundSamples = (jfieldID) (*env)->GetFieldID( env, javaDecoderInfo.clazz, "roundSamples", "I");
     }
 
+    AACD_TRACE( "aacd_start_info2java() - storing info sampleRate=%d, channels=%d",
+            cinfo->samplerate, cinfo->channels );
+
     (*env)->SetIntField( env, jinfo, javaDecoderInfo.sampleRate, (jint) cinfo->samplerate);
     (*env)->SetIntField( env, jinfo, javaDecoderInfo.channels, (jint) cinfo->channels);
+
+    AACD_TRACE( "aacd_start_info2java() - finished" );
 }
 
 
 void aacd_decode_info2java( JNIEnv *env, AACDCommonInfo *cinfo, jobject jinfo )
 {
+    AACD_TRACE( "aacd_decode_info2java() - storing info frameMaxBytesConsumed=%d, frameSamples=%d, roundFrames=%d, roundBytesConsumed=%d, roundSamples=%d",
+            cinfo->frame_max_bytesconsumed, cinfo->frame_samples,
+            cinfo->round_frames, cinfo->round_bytesconsumed, cinfo->round_samples );
+
     (*env)->SetIntField( env, jinfo, javaDecoderInfo.frameMaxBytesConsumed, (jint) cinfo->frame_max_bytesconsumed);
     (*env)->SetIntField( env, jinfo, javaDecoderInfo.frameSamples, (jint) cinfo->frame_samples);
     (*env)->SetIntField( env, jinfo, javaDecoderInfo.roundFrames, (jint) cinfo->round_frames);
     (*env)->SetIntField( env, jinfo, javaDecoderInfo.roundBytesConsumed, (jint) cinfo->round_bytesconsumed);
     (*env)->SetIntField( env, jinfo, javaDecoderInfo.roundSamples, (jint) cinfo->round_samples);
+
+    AACD_TRACE( "aacd_decode_info2java() - finished" );
 }
 
 
