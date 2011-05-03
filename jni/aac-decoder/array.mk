@@ -6,7 +6,7 @@ static_libs_array		:= $(foreach feature,$(AAC_DECODERS), aac$(feature) $(feature
 include $(CLEAR_VARS)
 LOCAL_MODULE 			:= aacarray
 LOCAL_SRC_FILES 		:= aac-common.c aac-array-common.c aac-array-decoder.c
-LOCAL_CFLAGS 			:= $(cflags_array_features)
+LOCAL_CFLAGS 			:= $(cflags_array_features) $(cflags_loglevels)
 LOCAL_LDLIBS 			:= -llog
 LOCAL_STATIC_LIBRARIES 	:= $(static_libs_array)
 include $(BUILD_SHARED_LIBRARY)

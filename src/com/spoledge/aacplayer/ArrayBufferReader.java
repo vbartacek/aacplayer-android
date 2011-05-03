@@ -26,6 +26,27 @@ import java.io.IOException;
 
 /**
  * This is a separate thread for reading data from a stream.
+ * The buffer creates 3 buffer instances - one is being filled by the execution thread,
+ * one is prepared with data, one can be processed by a consumer.
+ * <pre>
+ *  InputStream is = ...;
+ *
+ *  // create a new reader with capacity of 4096 bytes per buffer:
+ *  ArrayBufferReader reader = new ArrayBufferReader( 4096, is );
+ *
+ *  // start the execution thread which reads the stream and fills the buffers:
+ *  new Thread(reader).start();
+ *
+ *  // get the data
+ *  while (...) {
+ *      ArrayBufferReader.Buffer buf = reader.next();
+ *
+ *      if (!buf.getSize() == 0) break;
+ *
+ *      // process data
+ *      ...
+ *  }
+ * </pre>
  */
 public class ArrayBufferReader implements Runnable {
 
@@ -142,7 +163,7 @@ public class ArrayBufferReader implements Runnable {
             }
 
             buffer.size = total;
-Log.d(LOG,"run(): fetched buffer: " + total );
+
             synchronized (this) {
                 notify();
                 int indexNew = (indexMine + 1) % buffers.length;
@@ -185,8 +206,6 @@ Log.d(LOG,"run(): fetched buffer: " + total );
      * Blocks the caller until a buffer is ready.
      */
     public synchronized Buffer next() {
-//        Log.d( LOG, "next() indexMine=" + indexMine + ", indexBlocked=" + indexBlocked);
-
         int indexNew = (indexBlocked + 1) % buffers.length;
 
         while (!stopped && indexNew == indexMine) {
@@ -200,11 +219,9 @@ Log.d(LOG,"run(): fetched buffer: " + total );
         indexBlocked = indexNew;
 
         notify();
-Log.d(LOG,"next(): returning buffer: " + buffers[indexBlocked].size );
 
         return buffers[ indexBlocked ]; 
     }
-
 
 }
 

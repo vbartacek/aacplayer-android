@@ -222,6 +222,13 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     }
 
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stop();
+    }
+
+
     ////////////////////////////////////////////////////////////////////////////
     // Private
     ////////////////////////////////////////////////////////////////////////////

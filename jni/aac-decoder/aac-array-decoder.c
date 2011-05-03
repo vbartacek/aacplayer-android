@@ -17,13 +17,12 @@
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **/
 
+#define AACD_MODULE "ArrayDecoder"
+
 #include "aac-array-decoder.h"
 #include "aac-array-common.h"
 
 #include <string.h>
-#include <android/log.h>
-
-#define AACDW "ArrayDecoder"
 
 extern AACDDecoder aacd_faad_decoder;
 extern AACDDecoder aacd_ffmpeg_decoder;
@@ -97,7 +96,7 @@ JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_ArrayDecoder_nativeStart
 
     if (!dec)
     {
-        __android_log_print(ANDROID_LOG_ERROR, AACDW, "start() decoder [%d] not supported", decoder);
+        AACD_ERROR( "start() decoder [%d] not supported", decoder );
         return 0;
     }
 
@@ -116,7 +115,7 @@ JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_ArrayDecoder_nativeStart
 
     if (err < 0)
     {
-        __android_log_print(ANDROID_LOG_ERROR, AACDW, "start() failed err=%d", err );
+        AACD_ERROR( "start() failed err=%d", err );
         aacda_stop( ainfo );
 
         return 0;
@@ -126,7 +125,7 @@ JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_ArrayDecoder_nativeStart
     ainfo->cinfo.buffer = buffer + err;
     ainfo->cinfo.bytesleft = buffer_size - err;
 
-    __android_log_print(ANDROID_LOG_DEBUG, AACDW, "start() bytesleft=%d", ainfo->cinfo.bytesleft );
+    AACD_DEBUG( "start() bytesleft=%d", ainfo->cinfo.bytesleft );
 
     aacd_start_info2java( env, &ainfo->cinfo, aacInfo );
 

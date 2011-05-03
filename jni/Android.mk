@@ -5,7 +5,8 @@ mydir := $(call my-dir)
 #
 include $(mydir)/../.ant.properties
 
-AAC_DECODERS :=	$(aac.decoders)
+AAC_DECODERS 	:=	$(aac.decoders)
+LOGLEVEL 		:=	$(jni.loglevel)
 
 include $(mydir)/aac-decoder/Android.mk
 
