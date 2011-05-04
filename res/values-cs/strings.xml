@@ -6,10 +6,15 @@
 	<string name="button_ffmpeg">Přehrávač II (FFmpeg)</string>
 	<string name="button_opencore">Přehrávač III (OpenCORE)</string>
 	<string name="button_file">Přehrávač IV (file chunks)</string>
+	<string name="text_buffering">Načítám...</string>
+	<string name="text_buffers">Vyr.paměť (ms)</string>
+	<string name="text_buffers_audio">Audio</string>
+	<string name="text_buffers_decode">Dekodér</string>
 	<string name="text_exception">Chyba</string>
 	<string name="text_using_FAAD2">Používám FAAD2 ...</string>
 	<string name="text_using_FFmpeg">Používám FFmpeg ...</string>
 	<string name="text_using_OpenCORE">Používám OpenCORE ...</string>
 	<string name="text_using_file_chunks">Používám file chunks ...</string>
+	<string name="text_playing">Přehrávám...</string>
 	<string name="text_stopped">Zastaveno</string>
 </resources>

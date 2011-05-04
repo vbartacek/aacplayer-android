@@ -33,6 +33,7 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 
@@ -48,6 +49,10 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     private Button btnOpenCORE;
     private Button btnStop;
     private TextView txtStatus;
+    private TextView txtPlayStatus;
+    private EditText txtBufAudio;
+    private EditText txtBufDecode;
+    private ProgressBar progress;
     private Handler uiHandler;
 
     /**
@@ -66,10 +71,16 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     public void playerStarted() {
         uiHandler.post( new Runnable() {
             public void run() {
+                txtBufAudio.setEnabled( false );
+                txtBufDecode.setEnabled( false );
                 btnFaad2.setEnabled( false );
                 btnFFmpeg.setEnabled( false );
                 btnOpenCORE.setEnabled( false );
                 btnStop.setEnabled( true );
+
+                txtPlayStatus.setText( R.string.text_buffering );
+                progress.setProgress( 0 );
+                progress.setVisibility( View.VISIBLE );
             }
         });
     }
@@ -81,21 +92,31 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
      * @param isPlaying false means that the PCM data are being buffered,
      *          but the audio is not playing yet
      *
-     * @param samplesBuffered the number of samples buffered and prepared for playing
-     *
-     * @param bufferSize the total size of the buffer (samples - not bytes)
+     * @param audioBufferSizeMs the buffered audio data expressed in milliseconds of playing
+     * @param audioBufferCapacityMs the total capacity of audio buffer expressed in milliseconds of playing
      */
-    public void playerPCMFeedBuffer( boolean isPlaying, int samplesBuffered, int bufferSize ) {
-        
+    public void playerPCMFeedBuffer( final boolean isPlaying,
+                                     final int audioBufferSizeMs, final int audioBufferCapacityMs ) {
+
+        uiHandler.post( new Runnable() {
+            public void run() {
+                progress.setProgress( audioBufferSizeMs * progress.getMax() / audioBufferCapacityMs );
+                if (isPlaying) txtPlayStatus.setText( R.string.text_playing );
+            }
+        });
     }
 
 
-    public void playerStopped() {
+    public void playerStopped( final int perf ) {
         uiHandler.post( new Runnable() {
             public void run() {
                 enableButtons();
                 btnStop.setEnabled( false );
+                txtBufAudio.setEnabled( true );
+                txtBufDecode.setEnabled( true );
                 txtStatus.setText( R.string.text_stopped );
+                txtPlayStatus.setText( "" + perf + " %" );
+                progress.setVisibility( View.INVISIBLE );
             }
         });
     }
@@ -186,6 +207,14 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
 
         urlView = (AutoCompleteTextView) findViewById( R.id.view_main_edit_url );
         txtStatus = (TextView) findViewById( R.id.view_main_text_what );
+        txtPlayStatus = (TextView) findViewById( R.id.view_main_text_status );
+        txtBufAudio = (EditText) findViewById( R.id.view_main_text_bufaudio );
+        txtBufDecode = (EditText) findViewById( R.id.view_main_text_bufdecode );
+
+        progress = (ProgressBar) findViewById( R.id.view_main_progress );
+
+        txtBufAudio.setText( String.valueOf( AACPlayer.DEFAULT_AUDIO_BUFFER_CAPACITY_MS ));
+        txtBufDecode.setText( String.valueOf( AACPlayer.DEFAULT_DECODE_BUFFER_CAPACITY_MS ));
 
         btnFaad2.setOnClickListener( this );
         btnFFmpeg.setOnClickListener( this );
@@ -235,7 +264,8 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
 
     private void start( int decoder ) {
         stop();
-        aacPlayer = new ArrayAACPlayer( ArrayDecoder.create( decoder ), this);
+        aacPlayer = new ArrayAACPlayer( ArrayDecoder.create( decoder ), this,
+                                        getInt( txtBufAudio ), getInt( txtBufDecode ));
         aacPlayer.playAsync( getUrl());
     }
 
@@ -262,5 +292,8 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     }
 
 
+    private int getInt( EditText et ) {
+        return Integer.parseInt( et.getText().toString());
+    }
 }
 

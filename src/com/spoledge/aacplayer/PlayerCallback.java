@@ -40,18 +40,17 @@ public interface PlayerCallback {
      * @param isPlaying false means that the PCM data are being buffered,
      *          but the audio is not playing yet
      *
-     * @param samplesBuffered the number of samples buffered and prepared for playing
-     *
-     * @param bufferSize the total size of the buffer (samples - not bytes)
+     * @param audioBufferSizeMs the buffered audio data expressed in milliseconds of playing
+     * @param audioBufferCapacityMs the total capacity of audio buffer expressed in milliseconds of playing
      */
-    public void playerPCMFeedBuffer( boolean isPlaying, int samplesBuffered, int bufferSize );
+    public void playerPCMFeedBuffer( boolean isPlaying, int audioBufferSizeMs, int audioBufferCapacityMs );
 
 
     /**
      * This method is called when the player is stopped.
      * Note: __after__ this method the method playerException might be also called.
      */
-    public void playerStopped();
+    public void playerStopped( int perf );
 
 
     /**
