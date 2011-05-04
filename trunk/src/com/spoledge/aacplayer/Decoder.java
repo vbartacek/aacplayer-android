@@ -38,34 +38,72 @@ public abstract class Decoder {
         private int roundBytesConsumed;
         private int roundSamples;
 
-        public int getChannels() {
-            return channels;
-        }
 
+        ////////////////////////////////////////////////////////////////////////////
+        // Public
+        ////////////////////////////////////////////////////////////////////////////
+
+        /**
+         * Returns the sampling rate in Hz.
+         * @return the sampling rate - always set
+         */
         public int getSampleRate() {
             return sampleRate;
         }
 
+
+        /**
+         * Returns the number of channels (0=unknown yet, 1=mono, 2=stereo).
+         * @return the channels - always set
+         */
+        public int getChannels() {
+            return channels;
+        }
+
+
+        /**
+         * Returns the maximum bytes consumed per ADTS frame.
+         * @return the value - after each decode() round
+         */
         public int getFrameMaxBytesConsumed() {
             return frameMaxBytesConsumed;
         }
 
+
+        /**
+         * Returns the samples produced per ADTS frame.
+         * @return the value - after each decode() round (but should be always the same)
+         */
         public int getFrameSamples() {
             return frameSamples;
         }
 
+
+        /**
+         * Returns the number of ADTS frames decoded.
+         * @return the value - after each decode() round
+         */
         public int getRoundFrames() {
             return roundFrames;
         }
 
+
+        /**
+         * Returns the number of bytes consumed.
+         * @return the value - after each decode() round
+         */
         public int getRoundBytesConsumed() {
             return roundBytesConsumed;
         }
 
+
+        /**
+         * Returns the number of samples decoded.
+         * @return the value - after each decode() round
+         */
         public int getRoundSamples() {
             return roundSamples;
         }
-    
     }
 
 

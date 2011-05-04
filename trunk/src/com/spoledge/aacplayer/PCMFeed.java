@@ -42,17 +42,26 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
     protected int bufferSizeInMs;
     protected int bufferSizeInBytes;
 
+
     /**
      * The callback - may be null.
      */
     protected PlayerCallback playerCallback;
 
+
+    /**
+     * True iff the AudioTrack is playing.
+     */
+    protected boolean isPlaying;
+
     protected boolean stopped;
+
 
     /**
      * The local variable in run() method set by method acquireSamples().
      */
     protected short[] lsamples;
+
 
     /**
      * Total samples written to AudioTrack.
@@ -184,9 +193,12 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
      * has reached a multiple of the notification period. 
      */
     public void onPeriodicNotification( AudioTrack track ) {
-        int buffered = writtenTotal - track.getPlaybackHeadPosition()*channels;
-        Log.d( LOG, "onPeriodicNotification(): buffered "
-            + samplesToMs( buffered, sampleRate, channels ) + " ms");
+        if (playerCallback != null) {
+            int buffered = writtenTotal - track.getPlaybackHeadPosition()*channels;
+            int ms = samplesToMs( buffered, sampleRate, channels );
+
+            playerCallback.playerPCMFeedBuffer( isPlaying, ms, bufferSizeInMs );
+        }
     }
 
 
@@ -215,7 +227,7 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
         atrack.setPlaybackPositionUpdateListener( this );
         atrack.setPositionNotificationPeriod( msToSamples( 200, sampleRate, channels ));
 
-        boolean first = true;
+        isPlaying = false;
 
         while (!stopped) {
             // fetch the samples into our "local" variable lsamples:
@@ -248,11 +260,11 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
 
                 // Log.d( LOG, "PCM fed by " + ln + " and written " + written + " samples - buffered " + buffered);
 
-                if (first) {
+                if (!isPlaying) {
                     if (buffered*2 >= bufferSizeInBytes) {
                         Log.d( LOG, "start of AudioTrack - buffered " + buffered + " samples");
                         atrack.play();
-                        first = false;
+                        isPlaying = true;
                     }
                     else {
                         Log.d( LOG, "start buffer not filled enough - AudioTrack not started yet");
@@ -266,7 +278,7 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
             releaseSamples();
         }
 
-        if (!first) atrack.stop();
+        if (isPlaying) atrack.stop();
         atrack.release();
 
         Log.d( LOG, "run() stopped." );

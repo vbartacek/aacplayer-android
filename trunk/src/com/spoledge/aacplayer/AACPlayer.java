@@ -35,7 +35,26 @@ import java.net.URLConnection;
  */
 public abstract class AACPlayer {
 
+    /**
+     * The default expected bitrate.
+     * Used only if not specified in play() methods.
+     */
     public static final int DEFAULT_EXPECTED_KBITSEC_RATE = 64;
+
+
+    /**
+     * The default capacity of the audio buffer (AudioTrack) in ms.
+     * @see setAudioBufferCapacityMs(int)
+     */
+    public static final int DEFAULT_AUDIO_BUFFER_CAPACITY_MS = 1500;
+
+
+    /**
+     * The default capacity of the output buffer used for decoding in ms.
+     * @see setDecodeBufferCapacityMs(int)
+     */
+    public static final int DEFAULT_DECODE_BUFFER_CAPACITY_MS = 700;
+
 
     private static final String LOG = "AACPlayer";
 
@@ -45,24 +64,50 @@ public abstract class AACPlayer {
     ////////////////////////////////////////////////////////////////////////////
 
     protected boolean stopped;
+
+    protected int audioBufferCapacityMs;
+    protected int decodeBufferCapacityMs;
     protected PlayerCallback playerCallback;
 
-    protected int roundDurationMs = 750;
-
+    // variables used for computing average bitrate
     private int sumKBitSecRate = 0;
     private int countKBitSecRate = 0;
+    private int avgKBitSecRate = 0;
 
 
     ////////////////////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////////////////////
 
-    public AACPlayer() {
+    /**
+     * Creates a new player.
+     */
+    protected AACPlayer() {
+        this( null );
     }
 
 
-    public AACPlayer( PlayerCallback playerCallback ) {
+    /**
+     * Creates a new player.
+     * @param playerCallback the callback, can be null
+     */
+    protected AACPlayer( PlayerCallback playerCallback ) {
+        this( playerCallback, DEFAULT_AUDIO_BUFFER_CAPACITY_MS, DEFAULT_DECODE_BUFFER_CAPACITY_MS );
+    }
+
+
+    /**
+     * Creates a new player.
+     * @param playerCallback the callback, can be null
+     * @param audioBufferCapacityMs the capacity of the audio buffer (AudioTrack) in ms
+     * @param decodeBufferCapacityMs the capacity of the buffer used for decoding in ms
+     * @see setAudioBufferCapacityMs(int)
+     * @see setDecodeBufferCapacityMs(int)
+     */
+    protected AACPlayer( PlayerCallback playerCallback, int audioBufferCapacityMs, int decodeBufferCapacityMs ) {
         setPlayerCallback( playerCallback );
+        setAudioBufferCapacityMs( audioBufferCapacityMs );
+        setDecodeBufferCapacityMs( decodeBufferCapacityMs );
     }
 
 
@@ -70,25 +115,87 @@ public abstract class AACPlayer {
     // Public
     ////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * Sets the audio buffer (AudioTrack) capacity.
+     * The capacity can be expressed in time of audio playing of such buffer.
+     * For example 1 second buffer capacity is 88100 samples for 44kHz stereo.
+     * By setting this the audio will start playing after the audio buffer is first filled.
+     *
+     * NOTE: this should be set BEFORE any of the play methods are called.
+     *
+     * @param audioBufferCapacityMs the capacity of the buffer in milliseconds
+     */
+    public void setAudioBufferCapacityMs( int audioBufferCapacityMs ) {
+        this.audioBufferCapacityMs = audioBufferCapacityMs;
+    }
+
+
+    /**
+     * Gets the audio buffer capacity as the audio playing time.
+     * @return the capacity of the audio buffer in milliseconds
+     */
+    public int getAudioBufferCapacityMs() {
+        return audioBufferCapacityMs;
+    }
+
+
+    /**
+     * Sets the capacity of the output buffer used for decoding.
+     * The capacity can be expressed in time of audio playing of such buffer.
+     * For example 1 second buffer capacity is 88100 samples for 44kHz stereo.
+     * Decoder tries to fill out the whole buffer in each round.
+     *
+     * NOTE: this should be set BEFORE any of the play methods are called.
+     *
+     * @param decodeBufferCapacityMs the capacity of the buffer in milliseconds
+     */
+    public void setDecodeBufferCapacityMs( int decodeBufferCapacityMs ) {
+        this.decodeBufferCapacityMs = decodeBufferCapacityMs;
+    }
+
+
+    /**
+     * Gets the capacity of the output buffer used for decoding as the audio playing time.
+     * @return the capacity of the decoding buffer in milliseconds
+     */
+    public int getDecodeBufferCapacityMs() {
+        return decodeBufferCapacityMs;
+    }
+
+
+    /**
+     * Sets the PlayerCallback.
+     * NOTE: this should be set BEFORE any of the play methods are called.
+     */
     public void setPlayerCallback( PlayerCallback playerCallback ) {
         this.playerCallback = playerCallback;
     }
 
+
+    /**
+     * Returns the PlayerCallback or null if no PlayerCallback was set.
+     */
     public PlayerCallback getPlayerCallback() {
         return playerCallback;
     }
 
 
-    public void stop() {
-        stopped = true;
-    }
-
-
+    /**
+     * Plays a stream asynchronously.
+     * This method starts a new thread.
+     * @param url the URL of the stream or file
+     */
     public void playAsync( final String url ) {
         playAsync( url, -1 );
     }
 
 
+    /**
+     * Plays a stream asynchronously.
+     * This method starts a new thread.
+     * @param url the URL of the stream or file
+     * @param expectedKBitSecRate the expected average bitrate in kbit/sec; -1 means unknown
+     */
     public void playAsync( final String url, final int expectedKBitSecRate ) {
         new Thread(new Runnable() {
             public void run() {
@@ -105,11 +212,20 @@ public abstract class AACPlayer {
     }
 
 
+    /**
+     * Plays a stream synchronously.
+     * @param url the URL of the stream or file
+     */
     public void play( String url ) throws Exception {
         play( url, -1 );
     }
 
 
+    /**
+     * Plays a stream synchronously.
+     * @param url the URL of the stream or file
+     * @param expectedKBitSecRate the expected average bitrate in kbit/sec; -1 means unknown
+     */
     public void play( String url, int expectedKBitSecRate ) throws Exception {
         if (url.indexOf( ':' ) > 0) {
             URLConnection cn = new URL( url ).openConnection();
@@ -124,11 +240,20 @@ public abstract class AACPlayer {
     }
 
 
+    /**
+     * Plays a stream synchronously.
+     * @param is the input stream
+     */
     public void play( InputStream is ) throws Exception {
         play( is, -1 );
     }
 
 
+    /**
+     * Plays a stream synchronously.
+     * @param is the input stream
+     * @param expectedKBitSecRate the expected average bitrate in kbit/sec; -1 means unknown
+     */
     public final void play( InputStream is, int expectedKBitSecRate ) throws Exception {
         stopped = false;
 
@@ -143,10 +268,24 @@ public abstract class AACPlayer {
     }
 
 
+    /**
+     * Stops the execution thread.
+     */
+    public void stop() {
+        stopped = true;
+    }
+
+
     ////////////////////////////////////////////////////////////////////////////
     // Protected
     ////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * Plays a stream synchronously.
+     * This is the implementation method calle by every play() and playAsync() methods.
+     * @param is the input stream
+     * @param expectedKBitSecRate the expected average bitrate in kbit/sec
+     */
     protected abstract void playImpl( InputStream is, int expectedKBitSecRate ) throws Exception;
 
 
@@ -168,9 +307,10 @@ public abstract class AACPlayer {
 
             sumKBitSecRate += kBitSecRate * frames;
             countKBitSecRate += frames;
+            avgKBitSecRate = sumKBitSecRate / countKBitSecRate;
         }
 
-        return sumKBitSecRate / countKBitSecRate;
+        return avgKBitSecRate;
     }
 
 
@@ -207,8 +347,4 @@ public abstract class AACPlayer {
         return (int)(((long) bytesconsumed) * channels * sampleRate * durationMs  / (1000L * samples));
     }
 
-
-    protected static int computeOutputBufferSize( int sampleRate, int channels, int durationMs ) {
-        return sampleRate * channels * durationMs / 1000;
-    }
 }

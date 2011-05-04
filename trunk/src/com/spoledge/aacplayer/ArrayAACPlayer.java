@@ -29,8 +29,14 @@ import java.net.URLConnection;
 
 
 /**
- * This is the AACPlayer which uses AACDecoder to decode AAC stream into PCM samples.
- * Uses java.nio.* API.
+ * This is the AACPlayer which uses ArrayDecoder to decode AAC stream into PCM samples.
+ * <pre>
+ *  ArrayDecoder decoder = ArrayDecoder.create( Decoder.DECODER_OPENCORE );
+ *  ArrayAACPlayer player = new ArrayAACPlayer( decoder );
+ *
+ *  String url = ...;
+ *  player.playAsync( url );
+ * </pre>
  */
 public class ArrayAACPlayer extends AACPlayer {
 
@@ -43,13 +49,39 @@ public class ArrayAACPlayer extends AACPlayer {
     // Constructors
     ////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * Creates a new player.
+     * @param decoder the underlying decoder
+     */
     public ArrayAACPlayer( ArrayDecoder decoder ) {
         this( decoder, null );
     }
 
 
+    /**
+     * Creates a new player.
+     * @param decoder the underlying decoder
+     * @param playerCallback the callback, can be null
+     */
     public ArrayAACPlayer( ArrayDecoder decoder, PlayerCallback playerCallback ) {
-        super( playerCallback );
+        this( decoder, playerCallback, DEFAULT_AUDIO_BUFFER_CAPACITY_MS, DEFAULT_DECODE_BUFFER_CAPACITY_MS );
+    }
+
+
+    /**
+     * Creates a new player.
+     * @param decoder the underlying decoder
+     * @param playerCallback the callback, can be null
+     * @param audioBufferCapacityMs the capacity of the audio buffer (AudioTrack) in ms
+     * @param decodeBufferCapacityMs the capacity of the buffer used for decoding in ms
+     * @see setAudioBufferCapacityMs(int)
+     * @see setDecodeBufferCapacityMs(int)
+     */
+    public ArrayAACPlayer( ArrayDecoder decoder, PlayerCallback playerCallback,
+                            int audioBufferCapacityMs, int decodeBufferCapacityMs ) {
+
+        super( playerCallback, audioBufferCapacityMs, decodeBufferCapacityMs );
+
         this.decoder = decoder;
     }
 
@@ -58,8 +90,16 @@ public class ArrayAACPlayer extends AACPlayer {
     // Protected
     ////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * Plays a stream synchronously.
+     * This is the implementation method calle by every play() and playAsync() methods.
+     * @param is the input stream
+     * @param expectedKBitSecRate the expected average bitrate in kbit/sec
+     */
     protected void playImpl( InputStream is, int expectedKBitSecRate ) throws Exception {
-        ArrayBufferReader reader = new ArrayBufferReader( computeInputBufferSize( expectedKBitSecRate, roundDurationMs ), is );
+        ArrayBufferReader reader = new ArrayBufferReader(
+                                        computeInputBufferSize( expectedKBitSecRate, decodeBufferCapacityMs ),
+                                        is );
         new Thread( reader ).start();
 
         ArrayPCMFeed pcmfeed = null;
@@ -85,33 +125,17 @@ public class ArrayAACPlayer extends AACPlayer {
             //   - one is used by decoder
             //   - one is used by the PCMFeeder
             //   - one is enqueued / passed to PCMFeeder - non-blocking op
-            int samplesCapacity = computeOutputBufferSize( info.getSampleRate(), info.getChannels(), roundDurationMs);
+            short[][] decodeBuffers = createDecodeBuffers( 3, info );
+            short[] decodeBuffer = decodeBuffers[0]; 
+            int decodeBufferIndex = 0;
 
-            Log.d( LOG, "run() output capacity (samples)=" + samplesCapacity );
-
-            short[][] buffers = new short[3][];
-
-            for (int i=0; i < buffers.length; i++) {
-                buffers[i] = new short[ samplesCapacity ];
-            }
-
-            short[] outputBuffer = buffers[0]; 
-
-            int samplespoolindex = 0;
-
-            // Initialize the audio buffer as 2 * roundDurationMs:
-            int bufferSizeInBytes = PCMFeed.msToBytes( 2*roundDurationMs,
-                                                        info.getSampleRate(), info.getChannels());
-
-            pcmfeed = new ArrayPCMFeed( info.getSampleRate(), info.getChannels(),
-                                        bufferSizeInBytes, playerCallback );
-
-            new Thread(pcmfeed).start();
+            pcmfeed = createArrayPCMFeed( info );
+            new Thread( pcmfeed ).start();
 
             do {
                 long tsStart = System.currentTimeMillis();
 
-                info = decoder.decode( outputBuffer, samplesCapacity );
+                info = decoder.decode( decodeBuffer, decodeBuffer.length );
                 int nsamp = info.getRoundSamples();
 
                 profMs += System.currentTimeMillis() - tsStart;
@@ -121,21 +145,16 @@ public class ArrayAACPlayer extends AACPlayer {
                 Log.d( LOG, "play(): decoded " + nsamp + " samples" );
 
                 if (nsamp == 0 || stopped) break;
-                if (!pcmfeed.feed( outputBuffer, nsamp ) || stopped) break;
+                if (!pcmfeed.feed( decodeBuffer, nsamp ) || stopped) break;
 
                 int kBitSecRate = computeAvgKBitSecRate( info );
                 if (Math.abs(expectedKBitSecRate - kBitSecRate) > 1) {
-                    Log.d( LOG, "play(): changing kBitSecRate: " + expectedKBitSecRate + " -> " + kBitSecRate );
-                    reader.setCapacity( computeInputBufferSize( kBitSecRate, roundDurationMs ));
+                    Log.i( LOG, "play(): changing kBitSecRate: " + expectedKBitSecRate + " -> " + kBitSecRate );
+                    reader.setCapacity( computeInputBufferSize( kBitSecRate, decodeBufferCapacityMs ));
                     expectedKBitSecRate = kBitSecRate;
                 }
 
-                outputBuffer = buffers[ ++samplespoolindex % 3 ];
-
-                /*
-                Log.d( LOG, "play(): yield, sleeping...");
-                try { Thread.sleep( 50 ); } catch (InterruptedException e) {}
-                */
+                decodeBuffer = decodeBuffers[ ++decodeBufferIndex % 3 ];
             } while (!stopped);
         }
         finally {
@@ -145,13 +164,45 @@ public class ArrayAACPlayer extends AACPlayer {
             decoder.stop();
             reader.stop();
 
-            if (profCount > 0) Log.i( LOG, "play(): average decoding time: " + profMs / profCount + " ms");
-            if (profMs > 0) Log.i( LOG, "play(): average rate (samples/sec): audio=" + profSampleRate
-                + ", decoding=" + (1000*profSamples / profMs)
-                + ", audio/decoding= " + (1000*profSamples / profMs - profSampleRate) * 100 / profSampleRate + " %  (the higher, the better; negative means that decoding is slower than needed by audio)");
+            int perf = 0;
 
-            if (playerCallback != null) playerCallback.playerStopped();
+            if (profCount > 0) Log.i( LOG, "play(): average decoding time: " + profMs / profCount + " ms");
+
+            if (profMs > 0) {
+                perf = (int)((1000*profSamples / profMs - profSampleRate) * 100 / profSampleRate);
+
+                Log.i( LOG, "play(): average rate (samples/sec): audio=" + profSampleRate
+                    + ", decoding=" + (1000*profSamples / profMs)
+                    + ", audio/decoding= " + perf
+                    + " %  (the higher, the better; negative means that decoding is slower than needed by audio)");
+            }
+
+            if (playerCallback != null) playerCallback.playerStopped( perf );
         }
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Private
+    ////////////////////////////////////////////////////////////////////////////
+
+    private short[][] createDecodeBuffers( int count, Decoder.Info info ) {
+        int size = PCMFeed.msToSamples( decodeBufferCapacityMs, info.getSampleRate(), info.getChannels());
+
+        short[][] ret = new short[ count ][];
+
+        for (int i=0; i < ret.length; i++) {
+            ret[i] = new short[ size ];
+        }
+
+        return ret;
+    }
+
+
+    private ArrayPCMFeed createArrayPCMFeed( Decoder.Info info ) {
+        int size = PCMFeed.msToBytes( audioBufferCapacityMs, info.getSampleRate(), info.getChannels());
+
+        return new ArrayPCMFeed( info.getSampleRate(), info.getChannels(), size, playerCallback );
     }
 
 }
