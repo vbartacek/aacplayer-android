@@ -68,6 +68,8 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     // PlayerCallback
     ////////////////////////////////////////////////////////////////////////////
 
+    private boolean playerStarted;
+
     public void playerStarted() {
         uiHandler.post( new Runnable() {
             public void run() {
@@ -81,6 +83,8 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
                 txtPlayStatus.setText( R.string.text_buffering );
                 progress.setProgress( 0 );
                 progress.setVisibility( View.VISIBLE );
+
+                playerStarted = true;
             }
         });
     }
@@ -117,6 +121,8 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
                 txtStatus.setText( R.string.text_stopped );
                 txtPlayStatus.setText( "" + perf + " %" );
                 progress.setVisibility( View.INVISIBLE );
+
+                playerStarted = false;
             }
         });
     }
@@ -138,6 +144,8 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
                     .show();
 
                 txtStatus.setText( R.string.text_stopped );
+
+                if (playerStarted) playerStopped( 0 );
             }
         });
     }
