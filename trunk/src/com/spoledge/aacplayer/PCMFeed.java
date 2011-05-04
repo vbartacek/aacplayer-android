@@ -279,6 +279,7 @@ public abstract class PCMFeed implements Runnable, AudioTrack.OnPlaybackPosition
         }
 
         if (isPlaying) atrack.stop();
+        atrack.flush();
         atrack.release();
 
         Log.d( LOG, "run() stopped." );

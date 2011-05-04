@@ -57,13 +57,6 @@
 			/>
 			-->
 
-			<Button
-				android:id="@+id/view_main_button_stop"
-				android:text="@string/button_stop"
-				android:enabled="false"
-				style="@style/button_main"
-			/>
-
 			<LinearLayout
 				android:layout_width="fill_parent"
 				android:layout_height="wrap_content"
@@ -122,6 +115,21 @@
 
 			</LinearLayout>
 
+			<ProgressBar
+				android:id="@+id/view_main_progress"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:visibility="invisible"
+				style="?android:attr/progressBarStyleHorizontal"
+			/>
+
+			<TextView
+				android:id="@+id/view_main_text_status"
+				android:gravity="center_horizontal"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+			/>
+
 			<LinearLayout
 				android:layout_width="fill_parent"
 				android:layout_height="fill_parent"
@@ -129,19 +137,11 @@
 				android:orientation="vertical"
 			>
 
-				<TextView
-					android:id="@+id/view_main_text_status"
-					android:gravity="center_horizontal"
-					android:layout_width="fill_parent"
-					android:layout_height="wrap_content"
-				/>
-
-				<ProgressBar
-					android:id="@+id/view_main_progress"
-					android:layout_width="fill_parent"
-					android:layout_height="wrap_content"
-					android:visibility="invisible"
-					style="?android:attr/progressBarStyleHorizontal"
+				<Button
+					android:id="@+id/view_main_button_stop"
+					android:text="@string/button_stop"
+					android:enabled="false"
+					style="@style/button_main"
 				/>
 
 				<TextView
