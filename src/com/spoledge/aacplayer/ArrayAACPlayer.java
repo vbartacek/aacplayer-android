@@ -103,6 +103,7 @@ public class ArrayAACPlayer extends AACPlayer {
         new Thread( reader ).start();
 
         ArrayPCMFeed pcmfeed = null;
+        Thread pcmfeedThread = null;
 
         // profiling info
         long profMs = 0;
@@ -130,7 +131,8 @@ public class ArrayAACPlayer extends AACPlayer {
             int decodeBufferIndex = 0;
 
             pcmfeed = createArrayPCMFeed( info );
-            new Thread( pcmfeed ).start();
+            pcmfeedThread = new Thread( pcmfeed );
+            pcmfeedThread.start();
 
             do {
                 long tsStart = System.currentTimeMillis();
@@ -176,6 +178,8 @@ public class ArrayAACPlayer extends AACPlayer {
                     + ", audio/decoding= " + perf
                     + " %  (the higher, the better; negative means that decoding is slower than needed by audio)");
             }
+
+            if (pcmfeedThread != null) pcmfeedThread.join();
 
             if (playerCallback != null) playerCallback.playerStopped( perf );
         }
