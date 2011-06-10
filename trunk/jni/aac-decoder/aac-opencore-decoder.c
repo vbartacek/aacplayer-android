@@ -39,7 +39,7 @@ static const char* aacd_opencore_name()
 }
 
 
-static void* aacd_opencore_init()
+static int aacd_opencore_init(void **pext)
 {
     AACDOpenCore *oc = (AACDOpenCore*) calloc( 1, sizeof(struct AACDOpenCore));
 
@@ -64,9 +64,13 @@ static void* aacd_opencore_init()
         free( oc );
 
         oc = NULL;
+
+        return -1;
     }
 
-    return oc;
+    (*pext) = oc;
+
+    return 0;
 }
 
 
@@ -192,13 +196,13 @@ static int aacd_opencore_decode( AACDCommonInfo *cinfo, void *ext, unsigned char
     if (status != MP4AUDEC_SUCCESS && status != SUCCESS)
     {
         AACD_ERROR( "decode() bytesleft=%d, status=%d", buffer_size, status );
-        return -1;
+        return AACD_DECODE_OTHER;
     }
 
     cinfo->frame_bytesconsumed = pExt->inputBufferUsedLength;
     cinfo->frame_samples = pExt->frameLength * oc->frameSamplesFactor;
 
-    return 0;
+    return AACD_DECODE_OK;
 }
 
 
@@ -207,6 +211,7 @@ AACDDecoder aacd_opencore_decoder = {
     aacd_opencore_init,
     aacd_opencore_start,
     aacd_opencore_decode,
-    aacd_opencore_destroy
+    aacd_opencore_destroy,
+    aacd_probe
 };
 

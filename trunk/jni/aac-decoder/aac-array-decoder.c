@@ -25,10 +25,11 @@
 
 extern AACDDecoder aacd_faad_decoder;
 extern AACDDecoder aacd_ffmpeg_decoder;
+extern AACDDecoder aacd_ffmpeg_wma_decoder;
 extern AACDDecoder aacd_opencore_decoder;
 
 
-AACDDecoder* AACDDecoders[3] = {
+AACDDecoder* AACDDecoders[4] = {
 
 #ifdef AAC_ARRAY_FEATURE_FAAD2
     &aacd_faad_decoder,
@@ -44,6 +45,12 @@ AACDDecoder* AACDDecoders[3] = {
 
 #ifdef AAC_ARRAY_FEATURE_OPENCORE
     &aacd_opencore_decoder,
+#else
+    NULL,
+#endif
+
+#ifdef AAC_ARRAY_FEATURE_FFMPEG_WMA
+    &aacd_ffmpeg_wma_decoder
 #else
     NULL
 #endif
@@ -91,6 +98,7 @@ JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_ArrayDecoder_nativeGetFeature
 JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_ArrayDecoder_nativeStart
   (JNIEnv *env, jobject thiz, jint decoder, jobject jreader, jobject aacInfo)
 {
+    AACD_TRACE( "start() start" );
     AACDDecoder *dec = aacda_decoder( decoder );
 
     if (!dec)
@@ -101,15 +109,36 @@ JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_ArrayDecoder_nativeStart
 
     AACDArrayInfo *ainfo = aacda_start( env, dec, jreader, aacInfo );
 
+    if (!ainfo)
+    {
+        AACD_ERROR( "start() cannot initialize decoder - out-of-memory error ?" );
+        return 0;
+    }
+
     ainfo->env = env;
+
+    AACD_TRACE( "start() calling read_buffer" );
 
     unsigned char* buffer = aacda_read_buffer( ainfo );
     unsigned long buffer_size = ainfo->cinfo.bytesleft;
 
-    int pos = aacd_probe( buffer, buffer_size );
+    AACD_TRACE( "start() got %d bytes from read_buffer", buffer_size );
+
+    int pos = ainfo->decoder->sync( buffer, buffer_size );
+    AACD_TRACE( "start() sync returned %d", pos );
+
+    if (pos < 0)
+    {
+        AACD_ERROR( "start() failed - ADTS sync word not found" );
+        aacda_stop( ainfo );
+
+        return 0;
+    }
+
     buffer += pos;
     buffer_size -= pos;
 
+    AACD_TRACE( "start() calling decoder->start()" );
     long err = ainfo->decoder->start( &ainfo->cinfo, ainfo->ext, buffer, buffer_size );
 
     if (err < 0)
@@ -121,14 +150,19 @@ JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_ArrayDecoder_nativeStart
     }
 
     // remember pointers for first decode round:
-    ainfo->cinfo.buffer = buffer + err;
-    ainfo->cinfo.bytesleft = buffer_size - err;
+    if (!ainfo->cinfo.input_ctrl)
+    {
+        ainfo->cinfo.buffer = buffer + err;
+        ainfo->cinfo.bytesleft = buffer_size - err;
+    }
 
     AACD_DEBUG( "start() bytesleft=%d", ainfo->cinfo.bytesleft );
 
     aacd_start_info2java( env, &ainfo->cinfo, aacInfo );
 
     ainfo->env = NULL;
+
+    AACD_TRACE( "nativeStart() stop" );
 
     return (jint) ainfo;
 }

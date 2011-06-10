@@ -60,7 +60,7 @@ int aacd_probe(unsigned char *buffer, int len)
 
     AACD_WARN( "probe() could not find ADTS start" );
 
-    return 0;
+    return -1;
 }
 
 

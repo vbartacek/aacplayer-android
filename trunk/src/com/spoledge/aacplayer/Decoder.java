@@ -121,6 +121,11 @@ public abstract class Decoder {
      */
     public static final int DECODER_OPENCORE = 0x04;
 
+    /**
+     * Decoder supported bit: FFMPEG_WMA.
+     */
+    public static final int DECODER_FFMPEG_WMA = 0x08;
+
 
     private static boolean libLoaded = false;
 

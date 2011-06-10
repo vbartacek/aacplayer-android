@@ -226,7 +226,10 @@ public abstract class AACPlayer {
      * @param expectedKBitSecRate the expected average bitrate in kbit/sec; -1 means unknown
      */
     public void play( String url, int expectedKBitSecRate ) throws Exception {
-        if (url.indexOf( ':' ) > 0) {
+        if (url.startsWith( "mms://" )) {
+            play( new MMSInputStream( url ), expectedKBitSecRate );
+        }
+        else if (url.indexOf( ':' ) > 0) {
             URLConnection cn = new URL( url ).openConnection();
             cn.connect();
 

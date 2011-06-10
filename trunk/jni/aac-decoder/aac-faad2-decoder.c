@@ -28,12 +28,12 @@ static const char* aacd_faad_name()
 }
 
 
-static void* aacd_faad_init()
+static int aacd_faad_init(void **pext)
 {
-    void *ret = NeAACDecOpen();
+    (*pext) = NeAACDecOpen();
     AACD_INFO( "init() FAAD2 capabilities: %d", NeAACDecGetCapabilities());
 
-    return ret;
+    return 0;
 }
 
 
@@ -81,9 +81,12 @@ static int aacd_faad_decode( AACDCommonInfo *cinfo, void *ext, unsigned char *bu
         AACD_ERROR( "NeAACDecDecode bytesleft=%d, error: %s",
                     buffer_size,
                     NeAACDecGetErrorMessage(frame.error));
+
+        // return frame.error;
+        return AACD_DECODE_OTHER;
     }
 
-    return frame.error;
+    return AACD_DECODE_OK;
 }
 
 
@@ -92,5 +95,6 @@ AACDDecoder aacd_faad_decoder = {
     aacd_faad_init,
     aacd_faad_start,
     aacd_faad_decode,
-    aacd_faad_destroy
+    aacd_faad_destroy,
+    aacd_probe
 };

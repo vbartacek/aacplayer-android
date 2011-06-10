@@ -44,9 +44,21 @@ AACDArrayInfo* aacda_start( JNIEnv *env, AACDDecoder *decoder, jobject jreader, 
 
     AACDArrayInfo *ainfo = (AACDArrayInfo*) calloc( 1, sizeof( struct AACDArrayInfo ));
 
+    if (!ainfo) return NULL;
+
     ainfo->decoder = decoder;
 
-    ainfo->ext = ainfo->decoder->init();
+    AACD_TRACE( "start() calling init() of the decoder - %s", decoder->name());
+
+    if (ainfo->decoder->init(&ainfo->ext))
+    {
+        AACD_ERROR( "start() could not initialize the decoder '%s'", decoder->name());
+        free( ainfo );
+
+        return NULL;
+    }
+
+    AACD_TRACE( "start() method init() finished" );
 
     ainfo->reader = (*env)->NewGlobalRef( env, jreader );
     ainfo->aacInfo = (*env)->NewGlobalRef( env, aacInfo );
@@ -182,7 +194,7 @@ void aacda_decode( AACDArrayInfo *ainfo, jshort *samples, jint outLen )
     do
     {
         // check if input buffer is filled:
-        if (cinfo->bytesleft <= cinfo->frame_max_bytesconsumed)
+        if (!cinfo->input_ctrl && (cinfo->bytesleft <= cinfo->frame_max_bytesconsumed))
         {
             AACD_TRACE( "decode() reading input buffer" );
             aacda_read_buffer( ainfo );
@@ -197,14 +209,19 @@ void aacda_decode( AACDArrayInfo *ainfo, jshort *samples, jint outLen )
         AACD_TRACE( "decode() frame - frames=%d, consumed=%d, samples=%d, bytesleft=%d, frame_maxconsumed=%d, frame_samples=%d, outLen=%d", cinfo->round_frames, cinfo->round_bytesconsumed, cinfo->round_samples, cinfo->bytesleft, cinfo->frame_max_bytesconsumed, cinfo->frame_samples, outLen);
 
         int attempts = 10;
+        int err;
 
         do
         {
-            if (!ainfo->decoder->decode( cinfo, ainfo->ext, cinfo->buffer, cinfo->bytesleft, samples, outLen )) break;
+            err = ainfo->decoder->decode( cinfo, ainfo->ext, cinfo->buffer, cinfo->bytesleft, samples, outLen );
+            if (!err) break;
 
-            AACD_WARN( "decode() failed to decode a frame" );
+            AACD_WARN( "decode() failed to decode a frame err=%d", err );
             AACD_DEBUG( "decode() failed to decode a frame - frames=%d, consumed=%d, samples=%d, bytesleft=%d, frame_maxconsumed=%d, frame_samples=%d, outLen=%d", cinfo->round_frames, cinfo->round_bytesconsumed, cinfo->round_samples, cinfo->bytesleft, cinfo->frame_max_bytesconsumed, cinfo->frame_samples, outLen);
 
+            if (err == AACD_DECODE_OUTPUT_NEEDED) break;
+
+            if (cinfo->input_ctrl) continue;
             if (cinfo->bytesleft <= cinfo->frame_max_bytesconsumed)
             {
                 aacda_read_buffer( ainfo );
@@ -217,9 +234,13 @@ void aacda_decode( AACDArrayInfo *ainfo, jshort *samples, jint outLen )
                 }
             }
 
-            int pos = aacd_probe( cinfo->buffer+1, cinfo->bytesleft-1 );
-            cinfo->buffer += pos+1;
-            cinfo->bytesleft -= pos+1;
+            int pos = ainfo->decoder->sync( cinfo->buffer+1, cinfo->bytesleft-1 );
+
+            if (pos >= 0)
+            {
+                cinfo->buffer += pos+1;
+                cinfo->bytesleft -= pos+1;
+            }
         }
         while (--attempts > 0);
 
@@ -229,10 +250,13 @@ void aacda_decode( AACDArrayInfo *ainfo, jshort *samples, jint outLen )
             break;
         }
 
-        cinfo->round_frames++;
         cinfo->round_bytesconsumed += cinfo->frame_bytesconsumed;
-        cinfo->bytesleft -= cinfo->frame_bytesconsumed;
-        cinfo->buffer += cinfo->frame_bytesconsumed;
+
+        if (!cinfo->input_ctrl)
+        {
+            cinfo->bytesleft -= cinfo->frame_bytesconsumed;
+            cinfo->buffer += cinfo->frame_bytesconsumed;
+        }
 
         if (cinfo->frame_bytesconsumed > cinfo->frame_max_bytesconsumed)
         {
@@ -243,6 +267,10 @@ void aacda_decode( AACDArrayInfo *ainfo, jshort *samples, jint outLen )
         samples += cinfo->frame_samples;
         outLen -= cinfo->frame_samples;
         cinfo->round_samples += cinfo->frame_samples;
+
+        if (err) break;
+
+        cinfo->round_frames++;
     } 
     while (outLen >= cinfo->frame_samples );
 
