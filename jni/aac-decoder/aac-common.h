@@ -68,11 +68,25 @@
 extern "C" {
 #endif
 
+/**
+ * This should be returned by the decoder's decode() method.
+ */
+enum AACDDecodeResult {
+    AACD_DECODE_OK = 0x0000,
+    AACD_DECODE_EOF = 0x0001,
+    AACD_DECODE_INPUT_NEEDED = 0x0100,
+    AACD_DECODE_OUTPUT_NEEDED = 0x0200,
+    AACD_DECODE_OTHER = 0x8000
+};
+
 
 /**
  * Common info struct used for storing info between calls.
  */
 typedef struct AACDCommonInfo {
+    // flag for controlling the input - decoder reads the input data itself:
+    int input_ctrl;
+
     unsigned long samplerate;
     unsigned char channels;
     unsigned long bytesconsumed;
@@ -88,6 +102,7 @@ typedef struct AACDCommonInfo {
     // max statistics allowing to predict when to finish decoding:
     unsigned long frame_max_bytesconsumed;
     unsigned long frame_max_bytesconsumed_exact;
+    unsigned long frame_max_samples;
 
     // filled after each decoding round
     unsigned long round_frames;
@@ -108,9 +123,10 @@ typedef struct AACDDecoder {
 
     /**
      * Initializes the decoder.
-     * @return optionally pointer to decoder's internal structure
+     * @param ext the decoder can allocate private data and modify the pointer
+     * @return 0 on success; otherwise an error code
      */
-    void* (*init)();
+    int (*init)(void** pext);
 
     /**
      * Start decoding.
@@ -121,7 +137,7 @@ typedef struct AACDDecoder {
 
     /**
      * Decodes one frame.
-     * @return 0=OK, otherwise error.
+     * @return AACDDecodeResult (0=OK)
      */
     int (*decode)( AACDCommonInfo*, void*, unsigned char *, unsigned long, jshort*, jint);
 
@@ -129,6 +145,12 @@ typedef struct AACDDecoder {
      * Destroys the decoder - the decoder should free all resources.
      */
     void (*destroy)( AACDCommonInfo*, void*);
+
+    /**
+     * Synchronizes stream.
+     * @return the number of bytes to be skipped or -1 if no sync word found.
+     */
+    int (*sync)( unsigned char *buffer, int len );
 } AACDDecoder;
 
 

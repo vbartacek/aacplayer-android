@@ -46,6 +46,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
     private Button btnFaad2;
     private Button btnFFmpeg;
     private Button btnOpenCORE;
+    private Button btnMMSWMA;
     private Button btnStop;
     private TextView txtStatus;
     private TextView txtPlayStatus;
@@ -77,6 +78,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
                 btnFaad2.setEnabled( false );
                 btnFFmpeg.setEnabled( false );
                 btnOpenCORE.setEnabled( false );
+                btnMMSWMA.setEnabled( false );
                 btnStop.setEnabled( true );
 
                 txtPlayStatus.setText( R.string.text_buffering );
@@ -176,6 +178,11 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
                     txtStatus.setText( R.string.text_using_OpenCORE );
                     break; 
 
+                case R.id.view_main_button_mmswma:
+                    start( Decoder.DECODER_FFMPEG_WMA );
+                    txtStatus.setText( R.string.text_using_MMSWMA );
+                    break; 
+
                 /*
                 case R.id.view_main_button_file:
                     stop();
@@ -209,6 +216,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
         btnFaad2 = (Button) findViewById( R.id.view_main_button_faad2 );
         btnFFmpeg = (Button) findViewById( R.id.view_main_button_ffmpeg );
         btnOpenCORE = (Button) findViewById( R.id.view_main_button_opencore );
+        btnMMSWMA = (Button) findViewById( R.id.view_main_button_mmswma );
         //Button b3 = (Button) findViewById( R.id.view_main_button_file );
         btnStop = (Button) findViewById( R.id.view_main_button_stop );
 
@@ -226,6 +234,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
         btnFaad2.setOnClickListener( this );
         btnFFmpeg.setOnClickListener( this );
         btnOpenCORE.setOnClickListener( this );
+        btnMMSWMA.setOnClickListener( this );
         //b3.setOnClickListener( this );
         btnStop.setOnClickListener( this );
 
@@ -244,6 +253,9 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
             history.addUrl( "http://http.yourmuze.com:8000/play/paradise/l.aac" );
             history.addUrl( "http://http.yourmuze.com:8000/play/paradise/m.aac" );
             history.addUrl( "http://http.yourmuze.com:8000/play/paradise/h.aac" );
+            history.addUrl( "mms://live.cumulusstreaming.com/KTOP-AM" );
+            history.addUrl( "mms://70.61.202.210:3006/" );
+            history.addUrl( "mms://wmc1.den.liquidcompass.net/WTAWAM" );
         }
 
         urlView.setAdapter( history.getArrayAdapter());
@@ -296,6 +308,7 @@ public class AACPlayerActivity extends Activity implements View.OnClickListener,
         if ((dfeatures & Decoder.DECODER_FAAD2) != 0) btnFaad2.setEnabled( true );
         if ((dfeatures & Decoder.DECODER_FFMPEG) != 0) btnFFmpeg.setEnabled( true );
         if ((dfeatures & Decoder.DECODER_OPENCORE) != 0) btnOpenCORE.setEnabled( true );
+        if ((dfeatures & Decoder.DECODER_FFMPEG_WMA) != 0) btnMMSWMA.setEnabled( true );
     }
 
 

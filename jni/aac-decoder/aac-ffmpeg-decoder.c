@@ -86,7 +86,7 @@ static AVPacket* aacd_ffmpeg_create_avpkt()
 }
 
 
-static void* aacd_ffmpeg_init()
+static int aacd_ffmpeg_init( void **pext )
 {
     av_log_set_level( AV_LOG_DEBUG );
 
@@ -95,11 +95,13 @@ static void* aacd_ffmpeg_init()
     ff->avctx = aacd_ffmpeg_create_avctx( &aac_decoder );
     ff->avpkt = aacd_ffmpeg_create_avpkt();
 
+    (*pext) = ff;
+
     av_log( ff->avctx, AV_LOG_INFO, "Test of AV_LOG_INFO\n" );
     av_log( ff->avctx, AV_LOG_DEBUG, "Test of AV_LOG_DEBUG\n" );
     av_log( ff->avctx, AV_LOG_VERBOSE, "Test of AV_LOG_VERBOSE\n" );
 
-    return ff;
+    return 0;
 }
 
 
@@ -174,13 +176,13 @@ static int aacd_ffmpeg_decode( AACDCommonInfo *cinfo, void *ext, unsigned char *
     if (consumed <= 0) {
         AACD_ERROR( "decode() cannot decode frame bytesleft=%d, error: %d", buffer_size, consumed );
 
-        return -1;
+        return AACD_DECODE_OTHER;
     }
 
     cinfo->frame_bytesconsumed = consumed;
     cinfo->frame_samples = avctx->frame_size * avctx->channels;
 
-    return 0;
+    return AACD_DECODE_OK;
 }
 
 

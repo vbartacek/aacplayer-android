@@ -6,8 +6,9 @@ The source code can be obtained at http://code.google.com/p/aacplayer-android/
 
 This is a port of the following open source libraries to Android platform.
     * FAAD2 (Freeware Advanced Audio (AAC) Decoder including SBR decoding)
-    * FFmpeg library (only AAC decoder)
+    * FFmpeg library (AAC and WMA decoders, ASF demuxer)
     * OpenCORE aacdec library
+    * libmms library (MMS protocol)
 
 
 COPYRIGHTS
@@ -59,6 +60,13 @@ NOTE-OpenCORE:
     http://code.google.com/p/opencore-aacdec/
 
 
+NOTE-MMS:
+    This program uses "libmms" library to open MMS streams.
+    MMS library is licensed under the terms of GPL.
+    For more information about libmms, please visit
+    http://sourceforge.net/projects/libmms/
+
+
 !!! PLEASE NOTE !!!
 
 that the use of this software may require the payment of
@@ -67,8 +75,8 @@ building derivative works. We are not warranting or indemnifying you in
 any way for patent royalities! YOU ARE SOLELY RESPONSIBLE FOR YOUR OWN
 ACTIONS!
 
-For more information about the AAC patents, please visit
-http://www.vialicensing.com/licensing/AAC_index.cfm
+For more information about the Microsoft ASF patents, please visit
+http://en.wikipedia.org/wiki/Advanced_Systems_Format
 
 
 INSTALLING

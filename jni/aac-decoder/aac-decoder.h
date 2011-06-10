@@ -35,6 +35,9 @@ extern "C" {
 #undef com_spoledge_aacplayer_Decoder_DECODER_OPENCORE
 #define com_spoledge_aacplayer_Decoder_DECODER_OPENCORE 4L
 
+#undef com_spoledge_aacplayer_Decoder_DECODER_FFMPEG_WMA
+#define com_spoledge_aacplayer_Decoder_DECODER_FFMPEG_WMA 8L
+
 #ifdef __cplusplus
 }
 #endif

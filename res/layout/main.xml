@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<ScrollView
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="fill_parent"
 	android:layout_height="fill_parent"
@@ -23,7 +23,7 @@
 
 			<AutoCompleteTextView
 				android:id="@+id/view_main_edit_url"
-				android:text="http://"
+				android:text="mms://"
 				android:layout_width="fill_parent"
 				android:layout_height="wrap_content"
 			/>
@@ -45,6 +45,13 @@
 			<Button
 				android:id="@+id/view_main_button_opencore"
 				android:text="@string/button_opencore"
+				android:enabled="false"
+				style="@style/button_main"
+			/>
+
+			<Button
+				android:id="@+id/view_main_button_mmswma"
+				android:text="@string/button_mmswma"
 				android:enabled="false"
 				style="@style/button_main"
 			/>
@@ -158,4 +165,4 @@
 
 	</RelativeLayout>
 
-</RelativeLayout>
+</ScrollView>
