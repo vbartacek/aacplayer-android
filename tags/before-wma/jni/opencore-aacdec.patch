@@ -1,0 +1,72 @@
+diff -aur opencore-aacdec/src/get_adif_header.c aacplayer-android/jni/opencore-aacdec/src/get_adif_header.c
+--- opencore-aacdec/src/get_adif_header.c	2009-07-28 12:19:38.000000000 +0200
++++ aacplayer-android/jni/opencore-aacdec/src/get_adif_header.c	2011-03-28 10:56:20.000000000 +0200
+@@ -19,6 +19,11 @@
+ 
+  Filename: get_adif_header.cpp
+ 
++ Changes by Vaclav Bartacek:
++    2011-03-25: renamed get_adiff_header to opencore_get_adif_header
++        (due to linking problems - duplicit symbol
++        - same symbol used by FAAD2 and OpenCORE)
++
+ ------------------------------------------------------------------------------
+  INPUT AND OUTPUT DEFINITIONS
+ 
+@@ -242,7 +247,7 @@
+ ; Declare variables used in this module but defined elsewhere
+ ----------------------------------------------------------------------------*/
+ 
+-Int get_adif_header(
++Int opencore_get_adif_header(
+     tDec_Int_File *pVars,
+     ProgConfig    *pScratchPCE)
+ {
+diff -aur opencore-aacdec/src/get_adif_header.h aacplayer-android/jni/opencore-aacdec/src/get_adif_header.h
+--- opencore-aacdec/src/get_adif_header.h	2009-07-27 17:51:56.000000000 +0200
++++ aacplayer-android/jni/opencore-aacdec/src/get_adif_header.h	2011-03-28 10:56:26.000000000 +0200
+@@ -19,6 +19,11 @@
+ 
+  Filename: get_adif_header.h
+ 
++ Changes by Vaclav Bartacek:
++    2011-03-25: renamed get_adiff_header to opencore_get_adif_header
++        (due to linking problems - duplicit symbol
++        - same symbol used by FAAD2 and OpenCORE)
++
+ ------------------------------------------------------------------------------
+  INCLUDE DESCRIPTION
+ 
+@@ -74,7 +79,7 @@
+ ; Function Prototype declaration
+ ----------------------------------------------------------------------------*/
+ 
+-Int get_adif_header(
++Int opencore_get_adif_header(
+     tDec_Int_File *pVars,
+     ProgConfig    *pScratchPCE);
+ 
+diff -aur opencore-aacdec/src/pvmp4audiodecoderframe.c aacplayer-android/jni/opencore-aacdec/src/pvmp4audiodecoderframe.c
+--- opencore-aacdec/src/pvmp4audiodecoderframe.c	2009-07-28 12:19:38.000000000 +0200
++++ aacplayer-android/jni/opencore-aacdec/src/pvmp4audiodecoderframe.c	2011-03-28 10:56:33.000000000 +0200
+@@ -19,6 +19,11 @@
+ 
+  Filename: pvmp4audiodecoderframe.cpp
+ 
++ Changes by Vaclav Bartacek:
++    2011-03-25: renamed get_adiff_header to opencore_get_adif_header
++        (due to linking problems - duplicit symbol
++        - same symbol used by FAAD2 and OpenCORE)
++
+ ------------------------------------------------------------------------------
+  INPUT AND OUTPUT DEFINITIONS
+ 
+@@ -414,7 +419,7 @@
+          * (actually usedBits).
+          */
+         status =
+-            get_adif_header(
++            opencore_get_adif_header(
+                 pVars,
+                 &(pVars->scratch.scratch_prog_config));
+ 

@@ -1,0 +1,177 @@
+
+Freeware Advanced Audio (AAC) Player for Android
+http://www.spoledge.com
+
+The source code can be obtained at http://code.google.com/p/aacplayer-android/
+
+This is a port of the following open source libraries to Android platform.
+    * FAAD2 (Freeware Advanced Audio (AAC) Decoder including SBR decoding)
+    * FFmpeg library (only AAC decoder)
+    * OpenCORE aacdec library
+
+
+COPYRIGHTS
+==========
+
+For this software the following license applies:
+
+******************************************************************************
+** AACPlayer - Freeware Advanced Audio (AAC) Player for Android
+** Copyright (C) 2011 Spolecne s.r.o., http://www.spoledge.com
+**  
+** This program is free software; you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation; either version 3 of the License, or
+** (at your option) any later version.
+** 
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+** 
+** You should have received a copy of the GNU General Public License
+** along with this program. If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************
+
+NOTE-FAAD2:
+    This program uses FAAD2 library to decode AAC streams.
+    FAAD2 library is licensed under the terms of GPLv2.
+    For more information about FAAD2, please visit http://www.audiocoding.com/
+
+
+NOTE-FFmpeg:
+    This software uses libraries from the FFmpeg project under the LGPLv2.1.
+    As the FFmpeg source code was modified (see the file ffmpeg-0.6.1.patch),
+    the GPL license s applied to the modified FFmpeg source code.
+    For more information about FFmpeg, please visit http://ffmpeg.org/
+
+
+NOTE-OpenCORE:
+    This software uses libraries from the OpenCORE project under the Apache
+    License, Version 2.0. The library can be used as is without patching
+    if it is compiled separately (see below).
+    If you want to compile all libraries together - namely OpenCORE + FAAD2,
+    then due to a linking issue you have to patch the OpenCORE lib
+    (see the file jni/opencore-aacdec.patch). The patch itself as well
+    as the final patched files are licensed under the Apache License,
+    Version 2 (see jni/opencore-aacdec/Apache-LICENSE-2.0.txt).
+    For more information about OpenCORE aacdec, please visit
+    http://code.google.com/p/opencore-aacdec/
+
+
+!!! PLEASE NOTE !!!
+
+that the use of this software may require the payment of
+patent royalties. You need to consider this issue before you start
+building derivative works. We are not warranting or indemnifying you in
+any way for patent royalities! YOU ARE SOLELY RESPONSIBLE FOR YOUR OWN
+ACTIONS!
+
+For more information about the AAC patents, please visit
+http://www.vialicensing.com/licensing/AAC_index.cfm
+
+
+INSTALLING
+==========
+
+Requirements:
+    - Android SDK - at least platform 3 (Android 1.5)
+    - Android NDK - r4
+
+Preparing FFmpeg sources:
+-------------------------
+
+NOTE: Only when build from SVN. You can skip this if downloaded as a zip.
+    The zipped version already contains the patched FFmpeg source code.
+    Also you do not need to do this if you plan to not compile this particular
+    library (see below).
+
+    0) download FFmpeg 0.6.1 sources and extract it to a temporary directory <FFMPEG>
+        You can download the sources from the "Downloads" tab:
+            http://code.google.com/p/aacplayer-android/downloads/list
+
+    1) copy FFmpeg's directories libavcodec, libavformat and libavutil to jni/ffmpeg:
+        cp -R <FFMPEG>/libavcodec jni/ffmpeg
+        cp -R <FFMPEG>/libavformat jni/ffmpeg
+        cp -R <FFMPEG>/libavutil jni/ffmpeg
+
+    2) Apply patch:
+        patch -p0  < ffmpeg-0.6.1.patch
+
+
+Preparing OpenCORE sources:
+-------------------------
+
+NOTE: Only when build from SVN. You can skip this if downloaded as a zip.
+    The zipped version already contains the patched OpenCORE source code.
+    Also you do not need to do this if you plan to not compile this particular
+    library (see below).
+
+    0) checkout OpenCORE aacdec sources and extract it to a temporary directory <OPENCORE>
+        You can also download the sources from the "Downloads" tab:
+            http://code.google.com/p/aacplayer-android/downloads/list
+
+    1) copy OpenCORE's directories src, include and oscl to jni/opencore-aacdec:
+        cp -R <OPENCORE>/src jni/opencore-aacdec
+        cp -R <OPENCORE>/include jni/opencore-aacdec
+        cp -R <OPENCORE>/oscl jni/opencore-aacdec
+
+    2) Go to directory "jni" and apply patch:
+        cd jni
+        patch -Np0 < opencore-aacdec.patch
+
+
+Compiling:
+----------
+
+    1) copy sample.local.properties to local.properties and edit local.properties:
+        (path to Android SDK)
+
+    2) copy sample.ant.properties to .ant.properties and edit .ant.properties:
+        - path to Android NDK
+        - list of AAC decoders to be compiled
+            - you can choose one of FAAD2, FFmpeg or OpenCORE decoders
+                or you can choose two or all of them - follow the instructions
+                in the properties file
+                NOTE: if you disable a particular decoder, then you do not
+                    need its source codes, but also you cannot use at runtime !
+
+    3) run ant
+
+    4) install the APK on the emulator or a device:
+        adb install bin/AACPlayer-debug.apk
+
+Note:
+    The makefile scripts were tested on linux platform and there is 
+    a possibility that it won't work on windows / macosx.
+
+
+RUNNING
+=======
+
+There are these options of playing AAC files:
+
+    1) playing using the FAAD2 decoder native library
+            + should work on all 1.5+ platforms
+            - slow on emulator
+            - patent license is needed
+
+    2) playing using the FFmpeg decoder native library
+            + should work on all 1.5+ platforms
+            - slow on emulator
+            - patent license is needed
+
+    3) playing using the OpenCORE decoder native library
+            + fast on all types of devices - even those not having FPU
+            + should work on all 1.5+ platforms
+            + works on emulator
+            - patent license is needed
+
+    /* currenlty not shown in the menu:
+    4) playing using an internal AAC decoder (HTC Desire) by splitting the
+        stream into small file chunks (having the ".aac" suffix)
+            - only some devices support this
+            - does not work on emulator
+            - the playing is not smooth
+    */
+
