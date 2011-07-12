@@ -399,7 +399,7 @@ static int aacd_ffwma_decode( AACDCommonInfo *cinfo, void *ext, unsigned char *b
 
     if (consumed <= 0)
     {
-        AACD_ERROR( "decode() cannot decode frame pkt->size=%d, error: %d", pkt->size, consumed );
+        AACD_ERROR( "decode() cannot decode frame pkt->size=%d, outSize=%d, error: %d", pkt->size, outSize, consumed );
 
         if ( cinfo->frame_samples < outLen * 3 / 2 )
         {
@@ -420,7 +420,7 @@ static int aacd_ffwma_decode( AACDCommonInfo *cinfo, void *ext, unsigned char *b
     //cinfo->frame_samples = avctx->frame_size * avctx->channels;
     cinfo->frame_samples = (outSize >> 1);
 
-    AACD_TRACE( "decode() stop" );
+    AACD_TRACE( "decode() stop - consumed %d, pkt->size=%d", consumed, pkt->size );
 
     return AACD_DECODE_OK;
 }

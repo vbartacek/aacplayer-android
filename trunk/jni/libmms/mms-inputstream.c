@@ -92,6 +92,7 @@ JNIEXPORT jint JNICALL Java_com_spoledge_aacplayer_MMSInputStream_nativeRead
 
     if (len > minfo->bbsize)
     {
+        ALOG_TRACE( "nativeRead() extending buffer %d -> %d bytes", minfo->bbsize, len );
         if (minfo->buffer) free( minfo->buffer );
 
         minfo->buffer = malloc( len );

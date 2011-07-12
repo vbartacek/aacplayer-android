@@ -268,12 +268,14 @@ void aacda_decode( AACDArrayInfo *ainfo, jshort *samples, jint outLen )
         outLen -= cinfo->frame_samples;
         cinfo->round_samples += cinfo->frame_samples;
 
+        if (cinfo->frame_max_samples < cinfo->frame_samples) cinfo->frame_max_samples = cinfo->frame_samples;
+
         if (err) break;
 
         cinfo->round_frames++;
     } 
-    while (outLen >= cinfo->frame_samples );
+    while (outLen >= cinfo->frame_max_samples );
 
-    AACD_DEBUG( "decode() round - frames=%d, consumed=%d, samples=%d, bytesleft=%d, frame_maxconsumed=%d, frame_samples=%d, outLen=%d", cinfo->round_frames, cinfo->round_bytesconsumed, cinfo->round_samples, cinfo->bytesleft, cinfo->frame_max_bytesconsumed, cinfo->frame_samples, outLen);
+    AACD_DEBUG( "decode() round - frames=%d, consumed=%d, samples=%d, bytesleft=%d, frame_maxconsumed=%d, frame_samples=%d, frame_maxsamples=%d, outLen=%d", cinfo->round_frames, cinfo->round_bytesconsumed, cinfo->round_samples, cinfo->bytesleft, cinfo->frame_max_bytesconsumed, cinfo->frame_samples, cinfo->frame_max_samples, outLen);
 }
 
