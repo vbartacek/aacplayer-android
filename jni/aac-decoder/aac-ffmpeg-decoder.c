@@ -191,6 +191,7 @@ AACDDecoder aacd_ffmpeg_decoder = {
     aacd_ffmpeg_init,
     aacd_ffmpeg_start,
     aacd_ffmpeg_decode,
-    aacd_ffmpeg_destroy
+    aacd_ffmpeg_destroy,
+    aacd_probe
 };
 
